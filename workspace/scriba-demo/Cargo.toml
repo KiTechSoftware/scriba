@@ -1,0 +1,8 @@
+[package]
+name = "scriba-demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+scriba.workspace = true
+serde_json.workspace = true

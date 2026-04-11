@@ -1,11 +1,13 @@
-use crate::{Format, Output, Table};
+use crate::{Format, Output, StatusKind, Table};
 
 #[test]
 fn plain_render_requires_primary_scalar() {
     let output = Output::new().data("message", "ok");
     let err = super::render::render_plain(&output).unwrap_err();
 
-    assert!(err.to_string().contains("plain output requires a primary scalar value"));
+    assert!(err
+        .to_string()
+        .contains("plain output requires a primary scalar value"));
 }
 
 #[test]
@@ -18,9 +20,7 @@ fn plain_render_supports_string_scalar() {
 
 #[test]
 fn markdown_heading_renders() {
-    let output = Output::new()
-        .heading(1, "Title")
-        .paragraph("Body");
+    let output = Output::new().heading(1, "Title").paragraph("Body");
 
     let rendered = super::render::render_markdown(&output).unwrap();
 
@@ -70,9 +70,7 @@ fn indexed_table_materializes_index_column() {
 
 #[test]
 fn json_output_is_object() {
-    let output = Output::new()
-        .data("message", "ok")
-        .data("count", 2);
+    let output = Output::new().data("message", "ok").data("count", 2);
 
     let rendered = super::render::render_output_value(Format::Json, &output).unwrap();
 
@@ -81,9 +79,7 @@ fn json_output_is_object() {
 
 #[test]
 fn markdown_output_value_is_string() {
-    let output = Output::new()
-        .data("message", "ok")
-        .data("count", 2);
+    let output = Output::new().data("message", "ok").data("count", 2);
 
     let rendered = super::render::render_output_value(Format::Markdown, &output).unwrap();
 
@@ -104,9 +100,7 @@ fn jsonl_render_joins_records_with_newlines() {
 
 #[test]
 fn jsonl_render_falls_back_to_blocks() {
-    let output = Output::new()
-        .heading(1, "Hello")
-        .paragraph("World");
+    let output = Output::new().heading(1, "Hello").paragraph("World");
 
     let rendered = super::render::render_jsonl(&output).unwrap();
 
@@ -116,10 +110,7 @@ fn jsonl_render_falls_back_to_blocks() {
 
 #[test]
 fn table_render_value_returns_string_for_markdown() {
-    let table = Table::new(
-        vec!["name".into()],
-        vec![vec!["alpha".into()]],
-    );
+    let table = Table::new(vec!["name".into()], vec![vec!["alpha".into()]]);
 
     let value = super::table::render_table_value(Format::Markdown, &table).unwrap();
 
@@ -128,12 +119,91 @@ fn table_render_value_returns_string_for_markdown() {
 
 #[test]
 fn table_render_value_returns_json_for_json_format() {
-    let table = Table::new(
-        vec!["name".into()],
-        vec![vec!["alpha".into()]],
-    );
+    let table = Table::new(vec!["name".into()], vec![vec!["alpha".into()]]);
 
     let value = super::table::render_table_value(Format::Json, &table).unwrap();
 
     assert!(value.is_object());
+}
+
+#[test]
+fn key_value_entries_group_into_single_block() {
+    let output = Output::new()
+        .key_value("project", "scriba")
+        .key_value("env", "prod");
+
+    assert_eq!(output.blocks.len(), 1);
+
+    match &output.blocks[0] {
+        super::content::Block::KeyValue { entries } => {
+            assert_eq!(entries.len(), 2);
+            assert_eq!(entries[0].key, "project");
+            assert_eq!(entries[1].key, "env");
+        }
+        _ => panic!("expected key_value block"),
+    }
+}
+
+#[test]
+fn definition_entries_group_into_single_block() {
+    let output = Output::new()
+        .definition("Project", "scriba")
+        .definition("Environment", "production");
+
+    assert_eq!(output.blocks.len(), 1);
+
+    match &output.blocks[0] {
+        super::content::Block::DefinitionList { entries } => {
+            assert_eq!(entries.len(), 2);
+            assert_eq!(entries[0].term, "Project");
+            assert_eq!(entries[1].term, "Environment");
+        }
+        _ => panic!("expected definition_list block"),
+    }
+}
+
+#[test]
+fn markdown_key_value_renders_as_bullets() {
+    let output = Output::new()
+        .key_value("project", "scriba")
+        .key_value("env", "prod");
+
+    let rendered = super::render::render_markdown(&output).unwrap();
+
+    assert!(rendered.contains("- **project**: scriba"));
+    assert!(rendered.contains("- **env**: prod"));
+}
+
+#[test]
+fn text_definition_list_renders_term_and_description() {
+    let output = Output::new()
+        .definition("Project", "scriba")
+        .definition("Environment", "production");
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    assert!(rendered.contains("Project:"));
+    assert!(rendered.contains("  scriba"));
+    assert!(rendered.contains("Environment:"));
+}
+
+#[test]
+fn status_renders_in_markdown() {
+    let output = Output::new().status(
+        StatusKind::Warning,
+        "Tests failed but summary was generated",
+    );
+
+    let rendered = super::render::render_markdown(&output).unwrap();
+
+    assert!(rendered.contains("- **warning**: Tests failed but summary was generated"));
+}
+
+#[test]
+fn status_renders_in_text() {
+    let output = Output::new().status(StatusKind::Success, "Deployment complete");
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    assert!(rendered.contains("[success] Deployment complete"));
 }

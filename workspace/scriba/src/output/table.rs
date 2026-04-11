@@ -43,7 +43,8 @@ pub fn render_markdown_table(table: &Table) -> Result<String> {
     let header = format!("| {} |", table.headers.join(" | "));
     let separator = format!(
         "|{}|",
-        table.headers
+        table
+            .headers
             .iter()
             .map(|_| " --- ")
             .collect::<Vec<_>>()

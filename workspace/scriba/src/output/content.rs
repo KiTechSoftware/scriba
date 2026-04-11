@@ -102,19 +102,87 @@ impl Output {
         });
         self
     }
+
+    pub fn key_value(mut self, key: impl Into<String>, value: impl ToString) -> Self {
+        let entry = KeyValueEntry {
+            key: key.into(),
+            value: value.to_string(),
+        };
+
+        match self.blocks.last_mut() {
+            Some(Block::KeyValue { entries }) => entries.push(entry),
+            _ => self.blocks.push(Block::KeyValue {
+                entries: vec![entry],
+            }),
+        }
+
+        self
+    }
+
+    pub fn definition(mut self, term: impl Into<String>, description: impl Into<String>) -> Self {
+        let entry = DefinitionEntry {
+            term: term.into(),
+            description: description.into(),
+        };
+
+        match self.blocks.last_mut() {
+            Some(Block::DefinitionList { entries }) => entries.push(entry),
+            _ => self.blocks.push(Block::DefinitionList {
+                entries: vec![entry],
+            }),
+        }
+
+        self
+    }
+
+    pub fn status(mut self, kind: StatusKind, text: impl Into<String>) -> Self {
+        self.blocks.push(Block::Status {
+            kind,
+            text: text.into(),
+        });
+        self
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Block {
-    Heading { level: u8, text: String },
-    Paragraph { text: String },
-    Line { text: String },
+    Heading {
+        level: u8,
+        text: String,
+    },
+    Paragraph {
+        text: String,
+    },
+    Line {
+        text: String,
+    },
     Separator,
-    List { ordered: bool, items: Vec<String> },
-    Code { language: Option<String>, code: String },
-    Table { title: Option<String>, table: Table },
-    Json { value: Value },
+    List {
+        ordered: bool,
+        items: Vec<String>,
+    },
+    Code {
+        language: Option<String>,
+        code: String,
+    },
+    Table {
+        title: Option<String>,
+        table: Table,
+    },
+    Json {
+        value: Value,
+    },
+    KeyValue {
+        entries: Vec<KeyValueEntry>,
+    },
+    DefinitionList {
+        entries: Vec<DefinitionEntry>,
+    },
+    Status {
+        kind: StatusKind,
+        text: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -180,4 +248,25 @@ impl Table {
             index_header: self.index_header.clone(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct KeyValueEntry {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DefinitionEntry {
+    pub term: String,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StatusKind {
+    Info,
+    Success,
+    Warning,
+    Error,
 }

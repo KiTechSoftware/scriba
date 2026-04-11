@@ -1,12 +1,6 @@
 mod inquire;
 
 pub use inquire::{
-    confirm,
-    multiselect,
-    select,
-    text,
-    MultiSelectOption,
-    MultiSelectRequest,
-    SelectOption,
+    confirm, multiselect, select, text, MultiSelectOption, MultiSelectRequest, SelectOption,
     SelectRequest,
 };

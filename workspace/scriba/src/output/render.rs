@@ -1,9 +1,9 @@
 use serde_json::Value;
 use std::fmt::Write as _;
 
-use crate::{error::ScribaError, error::Result, Format};
+use crate::{error::Result, error::ScribaError, Format};
 
-use super::{table, Block, Output};
+use super::{table, Block, Output, StatusKind};
 
 pub fn render_output(format: Format, output: &Output) -> Result<String> {
     match format {
@@ -173,6 +173,23 @@ fn render_text_block(block: &Block, out: &mut String) -> Result<()> {
             out.push_str(&serde_json::to_string_pretty(value)?);
             out.push_str("\n\n");
         }
+        Block::KeyValue { entries } => {
+            for entry in entries {
+                writeln!(out, "{}: {}", entry.key, entry.value).ok();
+            }
+            out.push('\n');
+        }
+        Block::DefinitionList { entries } => {
+            for entry in entries {
+                writeln!(out, "{}:", entry.term).ok();
+                writeln!(out, "  {}", entry.description).ok();
+                out.push('\n');
+            }
+        }
+        Block::Status { kind, text } => {
+            writeln!(out, "[{}] {}", status_label(*kind), text).ok();
+            out.push('\n');
+        }
     }
 
     Ok(())
@@ -229,6 +246,23 @@ fn render_markdown_block(block: &Block, out: &mut String) -> Result<()> {
             out.push_str(&serde_json::to_string_pretty(value)?);
             out.push_str("\n```\n\n");
         }
+        Block::KeyValue { entries } => {
+            for entry in entries {
+                writeln!(out, "- **{}**: {}", entry.key, entry.value).ok();
+            }
+            out.push('\n');
+        }
+        Block::DefinitionList { entries } => {
+            for entry in entries {
+                writeln!(out, "**{}**  ", entry.term).ok();
+                writeln!(out, "{}", entry.description).ok();
+                out.push('\n');
+            }
+        }
+        Block::Status { kind, text } => {
+            writeln!(out, "- **{}**: {}", status_label(*kind), text).ok();
+            out.push('\n');
+        }
     }
 
     Ok(())
@@ -243,5 +277,14 @@ fn value_to_inline_string(value: &Value) -> String {
         Value::Array(_) | Value::Object(_) => {
             serde_json::to_string(value).unwrap_or_else(|_| "<invalid json>".to_string())
         }
+    }
+}
+
+fn status_label(kind: StatusKind) -> &'static str {
+    match kind {
+        StatusKind::Info => "info",
+        StatusKind::Success => "success",
+        StatusKind::Warning => "warning",
+        StatusKind::Error => "error",
     }
 }

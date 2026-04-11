@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 use crate::{output::render, Config, Format, Output, Result};
 
 pub struct Ui {
@@ -65,7 +67,9 @@ impl Ui {
 
     pub fn print(&self, output: &Output) -> Result<()> {
         let rendered = self.render(output)?;
-        print!("{rendered}");
+        let mut stdout = io::stdout();
+        stdout.write_all(rendered.as_bytes())?;
+        stdout.flush()?;
         Ok(())
     }
 }

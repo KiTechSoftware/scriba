@@ -109,10 +109,11 @@ impl<'a> Logger<'a> {
 }
 
 fn use_color(cfg: &Config) -> bool {
+    let auto = cfg.interactive;
     match cfg.color {
         ColorMode::Always => true,
         ColorMode::Never => false,
-        ColorMode::Auto => true,
+        ColorMode::Auto => auto,
     }
 }
 
