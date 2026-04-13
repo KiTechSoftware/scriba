@@ -109,6 +109,8 @@ impl MultiSelectOption {
 
 /// Request for single-choice selection prompt.
 ///
+/// Supports optional pagination via `with_page_size()` for large option lists.
+///
 /// # Example
 ///
 /// ```
@@ -120,7 +122,8 @@ impl MultiSelectOption {
 ///         SelectOption::new("dev", "Development"),
 ///         SelectOption::new("prod", "Production"),
 ///     ],
-/// );
+/// )
+/// .with_page_size(5);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectRequest {
@@ -128,6 +131,8 @@ pub struct SelectRequest {
     pub message: String,
     /// Available options to choose from.
     pub options: Vec<SelectOption>,
+    /// Optional page size for pagination (default: inquire's default of 7).
+    pub page_size: Option<usize>,
 }
 
 impl SelectRequest {
@@ -136,7 +141,27 @@ impl SelectRequest {
         Self {
             message: message.into(),
             options,
+            page_size: None,
         }
+    }
+
+    /// Set pagination page size for large option lists.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{SelectRequest, SelectOption};
+    ///
+    /// let request = SelectRequest::new(
+    ///     "Pick one",
+    ///     vec![SelectOption::new("a", "Option A")],
+    /// )
+    /// .with_page_size(5);
+    /// assert_eq!(request.page_size, Some(5));
+    /// ```
+    pub fn with_page_size(mut self, size: usize) -> Self {
+        self.page_size = Some(size);
+        self
     }
 }
 
@@ -309,10 +334,13 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
         .map(SelectOption::display)
         .collect::<Vec<_>>();
 
-    let selected = Select::new(&request.message, options)
-        .with_render_config(theme())
-        .prompt()
-        .map_err(map_inquire_error)?;
+    let mut prompt = Select::new(&request.message, options).with_render_config(theme());
+
+    if let Some(page_size) = request.page_size {
+        prompt = prompt.with_page_size(page_size);
+    }
+
+    let selected = prompt.prompt().map_err(map_inquire_error)?;
 
     let id = request
         .options
@@ -463,6 +491,35 @@ mod tests {
         let request = SelectRequest::new("Choose", options.clone());
         assert_eq!(request.message, "Choose");
         assert_eq!(request.options, options);
+        assert_eq!(request.page_size, None);
+    }
+
+    #[test]
+    fn select_request_with_page_size_sets_page_size() {
+        let options = vec![SelectOption::new("a", "Option A")];
+        let request = SelectRequest::new("Choose", options).with_page_size(5);
+        assert_eq!(request.page_size, Some(5));
+    }
+
+    #[test]
+    fn select_request_page_size_can_be_changed() {
+        let options = vec![SelectOption::new("a", "Option A")];
+        let request = SelectRequest::new("Choose", options)
+            .with_page_size(5)
+            .with_page_size(10);
+        assert_eq!(request.page_size, Some(10));
+    }
+
+    #[test]
+    fn select_request_builder_is_fluent() {
+        let options = vec![
+            SelectOption::new("a", "Option A"),
+            SelectOption::new("b", "Option B"),
+        ];
+        let request = SelectRequest::new("Choose", options).with_page_size(3);
+        assert_eq!(request.message, "Choose");
+        assert_eq!(request.options.len(), 2);
+        assert_eq!(request.page_size, Some(3));
     }
 
     #[test]
