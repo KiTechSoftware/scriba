@@ -21,7 +21,7 @@
 scriba = "0.1"
 
 # optional features
-scriba = { version = "0.1", features = ["prompt", "logger", "figlet"] }
+scriba = { version = "0.2", features = ["prompt", "logger", "figlet"] }
 ```
 
 ### Feature Flags
