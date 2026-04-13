@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 ///     .title("Report")
 ///     .heading(1, "Summary")
 ///     .paragraph("All systems operational")
-///     .status(StatusKind::Success, "Complete");
+///     .status(StatusKind::Ok, "Complete");
 /// ```
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Output {
@@ -436,7 +436,7 @@ pub struct DefinitionEntry {
 /// use scriba::{Output, StatusKind};
 ///
 /// let output = Output::new()
-///     .status(StatusKind::Success, "Deployment complete")
+///     .status(StatusKind::Ok, "Deployment complete")
 ///     .status(StatusKind::Warning, "High resource usage");
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -445,9 +445,12 @@ pub enum StatusKind {
     /// Informational status.
     Info,
     /// Success status (typically green).
-    Success,
+    Ok,
     /// Warning status (typically yellow/orange).
     Warning,
     /// Error status (typically red).
     Error,
+    /// Deprecated: use `Ok` instead.
+    #[deprecated(since = "0.2.0", note = "use `StatusKind::Ok` instead")]
+    Success,
 }

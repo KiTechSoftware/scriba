@@ -201,7 +201,7 @@ fn status_renders_in_markdown() {
 
 #[test]
 fn status_renders_in_text() {
-    let output = Output::new().status(StatusKind::Success, "Deployment complete");
+    let output = Output::new().status(StatusKind::Ok, "Deployment complete");
 
     let rendered = super::render::render_text(&output).unwrap();
 
@@ -457,7 +457,7 @@ fn table_json_value() {
 fn status_all_kinds_render() {
     let output = Output::new()
         .status(StatusKind::Info, "Info message")
-        .status(StatusKind::Success, "Success message")
+        .status(StatusKind::Ok, "Success message")
         .status(StatusKind::Warning, "Warning message")
         .status(StatusKind::Error, "Error message");
 

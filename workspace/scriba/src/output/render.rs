@@ -283,8 +283,10 @@ fn value_to_inline_string(value: &Value) -> String {
 fn status_label(kind: StatusKind) -> &'static str {
     match kind {
         StatusKind::Info => "info",
-        StatusKind::Success => "success",
+        StatusKind::Ok => "success",
         StatusKind::Warning => "warning",
         StatusKind::Error => "error",
+        #[allow(deprecated)]
+        StatusKind::Success => "success",
     }
 }

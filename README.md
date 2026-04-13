@@ -254,14 +254,14 @@ Use semantic states for results and summaries.
 use scriba::{Output, StatusKind};
 
 let output = Output::new()
-    .status(StatusKind::Success, "Deployment complete")
+    .status(StatusKind::Ok, "Deployment complete")
     .status(StatusKind::Warning, "Using cached config");
 ```
 
 Available kinds:
 
 - `StatusKind::Info`
-- `StatusKind::Success`
+- `StatusKind::Ok`
 - `StatusKind::Warning`
 - `StatusKind::Error`
 
