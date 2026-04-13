@@ -365,9 +365,7 @@ pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<Str
         multiselect = multiselect.with_page_size(page_size);
     }
 
-    let selected = multiselect
-        .prompt()
-        .map_err(map_inquire_error)?;
+    let selected = multiselect.prompt().map_err(map_inquire_error)?;
 
     let ids = request
         .options
@@ -384,5 +382,123 @@ fn map_inquire_error(err: ::inquire::InquireError) -> Error {
         ::inquire::InquireError::OperationCanceled
         | ::inquire::InquireError::OperationInterrupted => Error::PromptCancelled,
         other => Error::Prompt(other.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn select_option_new_creates_with_id_and_label() {
+        let option = SelectOption::new("dev", "Development");
+        assert_eq!(option.id, "dev");
+        assert_eq!(option.label, "Development");
+        assert_eq!(option.description, None);
+    }
+
+    #[test]
+    fn select_option_description_sets_description() {
+        let option = SelectOption::new("dev", "Development").description("Local environment");
+        assert_eq!(option.description, Some("Local environment".into()));
+    }
+
+    #[test]
+    fn select_option_display_includes_description() {
+        let option = SelectOption::new("dev", "Development").description("Local environment");
+        assert_eq!(option.display(), "Development — Local environment");
+    }
+
+    #[test]
+    fn select_option_display_without_description() {
+        let option = SelectOption::new("dev", "Development");
+        assert_eq!(option.display(), "Development");
+    }
+
+    #[test]
+    fn multi_select_option_new_creates_unselected() {
+        let option = MultiSelectOption::new("logger", "Logger");
+        assert_eq!(option.id, "logger");
+        assert_eq!(option.label, "Logger");
+        assert!(!option.selected);
+        assert_eq!(option.description, None);
+    }
+
+    #[test]
+    fn multi_select_option_selected_sets_flag() {
+        let option = MultiSelectOption::new("logger", "Logger").selected(true);
+        assert!(option.selected);
+    }
+
+    #[test]
+    fn multi_select_option_description_sets_description() {
+        let option = MultiSelectOption::new("logger", "Logger").description("Logging system");
+        assert_eq!(option.description, Some("Logging system".into()));
+    }
+
+    #[test]
+    fn multi_select_option_builder_is_fluent() {
+        let option = MultiSelectOption::new("logger", "Logger")
+            .description("Logging system")
+            .selected(true);
+        assert!(option.selected);
+        assert_eq!(option.description, Some("Logging system".into()));
+    }
+
+    #[test]
+    fn multi_select_option_display_includes_description() {
+        let option = MultiSelectOption::new("logger", "Logger").description("Logging system");
+        assert_eq!(option.display(), "Logger — Logging system");
+    }
+
+    #[test]
+    fn multi_select_option_display_without_description() {
+        let option = MultiSelectOption::new("logger", "Logger");
+        assert_eq!(option.display(), "Logger");
+    }
+
+    #[test]
+    fn select_request_new_creates_with_message_and_options() {
+        let options = vec![SelectOption::new("a", "Option A")];
+        let request = SelectRequest::new("Choose", options.clone());
+        assert_eq!(request.message, "Choose");
+        assert_eq!(request.options, options);
+    }
+
+    #[test]
+    fn multi_select_request_new_creates_with_no_page_size() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options.clone());
+        assert_eq!(request.message, "Select");
+        assert_eq!(request.options, options);
+        assert_eq!(request.page_size, None);
+    }
+
+    #[test]
+    fn multi_select_request_with_page_size_sets_page_size() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options).with_page_size(5);
+        assert_eq!(request.page_size, Some(5));
+    }
+
+    #[test]
+    fn multi_select_request_builder_is_fluent() {
+        let options = vec![
+            MultiSelectOption::new("a", "Option A"),
+            MultiSelectOption::new("b", "Option B"),
+        ];
+        let request = MultiSelectRequest::new("Select items", options).with_page_size(10);
+        assert_eq!(request.message, "Select items");
+        assert_eq!(request.options.len(), 2);
+        assert_eq!(request.page_size, Some(10));
+    }
+
+    #[test]
+    fn multi_select_request_page_size_can_be_changed() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options)
+            .with_page_size(5)
+            .with_page_size(10);
+        assert_eq!(request.page_size, Some(10));
     }
 }
