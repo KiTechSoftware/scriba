@@ -18,10 +18,10 @@
 
 ```toml
 [dependencies]
-scriba = "0.1"
+scriba = "0.3"
 
 # optional features
-scriba = { version = "0.2", features = ["prompt", "logger", "figlet"] }
+scriba = { version = "0.3", features = ["prompt", "logger", "figlet"] }
 ```
 
 ### Feature Flags
@@ -346,6 +346,142 @@ let values = ui.multiselect(&MultiSelectRequest::new(
 ))?;
 ```
 
+### Pagination
+
+Both `SelectRequest` and `MultiSelectRequest` support an optional page size for long option lists:
+
+```rust
+let env = ui.select(&SelectRequest::new("Select environment", options)
+    .with_page_size(10))?;
+
+let targets = ui.multiselect(&MultiSelectRequest::new("Choose targets", options)
+    .with_page_size(10))?;
+```
+
+## Envelope
+
+Wrap any output in a JSON envelope with a configurable layout and optional
+execution metadata. Enabled by setting `EnvelopeMode::Json` on the `Ui`.
+
+### Flat layout (default)
+
+```rust
+use scriba::{
+    Format, Output, Ui,
+    envelope::{EnvelopeConfig, EnvelopeLayout, EnvelopeMode, Meta},
+};
+
+fn main() -> scriba::Result<()> {
+    let output = Output::new()
+        .data("environment", "production")
+        .data("version", "1.4.2");
+
+    let meta = Meta::default()
+        .with_command("deploy".into())
+        .with_duration_ms(312)
+        .with_dry_run(false);
+
+    let ui = Ui::new()
+        .with_format(Format::Json)
+        .with_envelope(
+            EnvelopeConfig::default()
+                .with_mode(EnvelopeMode::Json)
+                .with_layout(EnvelopeLayout::Flat),
+        );
+
+    ui.print_with_meta(&output, Some(&meta), true)?;
+    Ok(())
+}
+```
+
+Output:
+
+```json
+{
+  "ok": true,
+  "format": "json",
+  "content": { "environment": "production", "version": "1.4.2" },
+  "meta": { "command": "deploy", "duration_ms": 312, "dry_run": false }
+}
+```
+
+### Nested layout
+
+`ok`, `format`, and all metadata fields are merged under the `meta` key.
+
+```rust
+let ui = Ui::new()
+    .with_format(Format::Json)
+    .with_envelope(
+        EnvelopeConfig::default()
+            .with_mode(EnvelopeMode::Json)
+            .with_layout(EnvelopeLayout::Nested),
+    );
+
+ui.print_with_meta(&output, Some(&meta), true)?;
+```
+
+Output:
+
+```json
+{
+  "meta": { "ok": true, "format": "json", "command": "deploy", "dry_run": false },
+  "content": { ... }
+}
+```
+
+### Custom field names
+
+```rust
+use scriba::envelope::{EnvelopeConfig, EnvelopeFields, EnvelopeMode};
+
+let ui = Ui::new()
+    .with_format(Format::Json)
+    .with_envelope(
+        EnvelopeConfig::default()
+            .with_mode(EnvelopeMode::Json)
+            .with_fields(EnvelopeFields {
+                ok_field: "success".into(),
+                format_field: "type".into(),
+                content_field: "result".into(),
+                meta_field: "context".into(),
+            }),
+    );
+```
+
+### Meta
+
+`Meta` carries optional structured context about the command invocation.
+
+```rust
+use scriba::envelope::Meta;
+
+let meta = Meta::default()
+    .with_command("deploy".into())
+    .with_version("1.0.0".into())
+    .with_scope("production".into())
+    .with_duration_ms(342)
+    .with_timestamp("2025-01-01T00:00:00Z".into())
+    .with_dry_run(false)
+    .with_extra("region", "us-east-1")
+    .with_extra("actor", "ci")
+    .with_extra_map([
+        ("trace_id".into(), serde_json::json!("abc-123")),
+        ("run_id".into(), serde_json::json!(42)),
+    ]);
+```
+
+All fields are optional and omitted from the JSON output when not set.
+
+### Runnable examples
+
+```sh
+cargo run --example envelope_flat
+cargo run --example envelope_nested
+cargo run --example envelope_custom_fields
+cargo run --example envelope_meta
+```
+
 ## Logger (`logger` feature)
 
 ```rust
@@ -353,14 +489,14 @@ use scriba::Ui;
 
 let ui = Ui::new();
 
-ui.logger().info("starting")?;
-ui.logger().ok("done")?;
-ui.logger().warn("careful")?;
-ui.logger().error("failed")?;
-ui.logger().detail("verbose detail")?;
-ui.logger().debug("debug line")?;
-ui.logger().trace("trace line")?;
-ui.logger().kv("region", "us-east-1")?;
+ui.logger().info("starting");
+ui.logger().ok("done");
+ui.logger().warn("careful");
+ui.logger().error("failed");
+ui.logger().detail("verbose detail");
+ui.logger().debug("debug line");
+ui.logger().trace("trace line");
+ui.logger().kv("region", "us-east-1");
 ```
 
 ## Figlet (`figlet` feature)
@@ -413,13 +549,21 @@ Built-in fonts include:
 | Event stream          | `jsonl_record()`      |
 | Tabular data          | `table()`             |
 | Numbered rows         | `with_index()`        |
+| JSON envelope         | `EnvelopeConfig`      |
+| Execution metadata    | `Meta`                |
 
 ## Roadmap
 
+### v0.4.0
+
+- [ ] table layout variants (`Full`, `Compact`, `Stacked`)
 - [ ] richer styling options
-- [ ] table layout variants
+
+### Backlog
+
 - [ ] output streaming
 - [ ] optional derive macros
+- [ ] richer prompt theming capabilities
 
 ## License
 

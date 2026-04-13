@@ -28,6 +28,7 @@
 //! ```
 
 pub mod config;
+pub mod envelope;
 pub mod error;
 pub mod output;
 pub mod ui;
@@ -42,6 +43,7 @@ pub mod logger;
 pub mod figlet;
 
 pub use config::{ColorMode, Config, Format, Level};
+pub use envelope::{EnvelopeConfig, EnvelopeFields, EnvelopeLayout, EnvelopeMode, Meta};
 pub use error::{Result, ScribaError as Error};
 pub use output::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table};
 pub use ui::Ui;

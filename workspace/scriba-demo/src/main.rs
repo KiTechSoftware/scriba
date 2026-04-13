@@ -1,6 +1,6 @@
 use scriba::{
     Format, MultiSelectOption, MultiSelectRequest, Output, SelectOption, SelectRequest, StatusKind,
-    Table, Ui, figlet,
+    Table, Ui, envelope::{EnvelopeConfig, EnvelopeLayout, EnvelopeMode, Meta}, figlet,
 };
 
 fn main() -> scriba::Result<()> {
@@ -85,6 +85,47 @@ fn main() -> scriba::Result<()> {
     ui.logger().kv("environment", &environment);
     ui.logger().kv("selected_features", &features.join(", "));
 
+    // Envelope mode
+    let envelope_id = ui.select(&SelectRequest::new(
+        "Select envelope mode",
+        vec![
+            SelectOption::new("none", "None").description("raw output, no wrapping"),
+            SelectOption::new("json_flat", "JSON flat")
+                .description("wrap in JSON with fields at top level"),
+            SelectOption::new("json_nested", "JSON nested")
+                .description("wrap in JSON with ok/format nested under meta"),
+        ],
+    ))?;
+
+    let envelope_cfg = match envelope_id.as_str() {
+        "json_flat" => EnvelopeConfig::default()
+            .with_mode(EnvelopeMode::Json)
+            .with_layout(EnvelopeLayout::Flat),
+        "json_nested" => EnvelopeConfig::default()
+            .with_mode(EnvelopeMode::Json)
+            .with_layout(EnvelopeLayout::Nested),
+        _ => EnvelopeConfig::default(),
+    };
+
+    let envelope_active = envelope_cfg.mode.is_json();
+
+    let dry_run = if envelope_active {
+        ui.confirm("Dry run?", false)?
+    } else {
+        false
+    };
+
+    // Rebuild UI with format + envelope
+    let ui = Ui::new()
+        .with_format(selected_format)
+        .with_envelope(envelope_cfg)
+        .interactive(true);
+
+    ui.logger().kv("envelope", envelope_id.as_str());
+    if envelope_active {
+        ui.logger().kv("dry_run", &dry_run.to_string());
+    }
+
     let feature_rows = features
         .iter()
         .enumerate()
@@ -145,7 +186,15 @@ fn main() -> scriba::Result<()> {
         .key_value("environment", "ci")
         .definition("Next action", "Review failed checks before publishing");
 
-    ui.print(&output)?;
+    if envelope_active {
+        let meta = Meta::default()
+            .with_dry_run(dry_run)
+            .with_command("scriba-demo".into())
+            .with_version(env!("CARGO_PKG_VERSION").into());
+        ui.print_with_meta(&output, Some(&meta), true)?;
+    } else {
+        ui.print(&output)?;
+    }
 
     ui.logger().ok("demo finished successfully");
     Ok(())

@@ -1,6 +1,10 @@
 use std::io::{self, Write};
 
-use crate::{output::render, Config, Format, Output, Result};
+use crate::{
+    envelope::{self, EnvelopeConfig, EnvelopeFields, EnvelopeLayout, EnvelopeMode, Meta},
+    output::render,
+    Config, Format, Output, Result,
+};
 
 /// Main interface for building CLI output, prompts, and logging.
 ///
@@ -18,9 +22,10 @@ use crate::{output::render, Config, Format, Output, Result};
 /// let output = Output::new().heading(1, "Welcome");
 /// ui.print(&output)?;
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Ui {
     config: Config,
+    envelope: EnvelopeConfig,
 }
 
 impl Ui {
@@ -35,6 +40,7 @@ impl Ui {
     pub fn new() -> Self {
         Self {
             config: Config::default(),
+            envelope: EnvelopeConfig::default(),
         }
     }
 
@@ -55,12 +61,84 @@ impl Ui {
     /// let ui = Ui::with_config(config);
     /// ```
     pub fn with_config(config: Config) -> Self {
-        Self { config }
+        Self { config, envelope: EnvelopeConfig::default() }
     }
 
     /// Get reference to the current configuration.
     pub fn config(&self) -> &Config {
         &self.config
+    }
+
+    /// Get reference to the current envelope configuration.
+    pub fn envelope(&self) -> &EnvelopeConfig {
+        &self.envelope
+    }
+
+    /// Set the envelope configuration.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{Ui, envelope::{EnvelopeConfig, EnvelopeMode}};
+    ///
+    /// let ui = Ui::new().with_envelope(
+    ///     EnvelopeConfig::default().with_mode(EnvelopeMode::Json)
+    /// );
+    /// ```
+    pub fn with_envelope(mut self, config: EnvelopeConfig) -> Self {
+        self.envelope = config;
+        self
+    }
+
+    /// Set the envelope mode directly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{Ui, envelope::EnvelopeMode};
+    ///
+    /// let ui = Ui::new().with_envelope_mode(EnvelopeMode::Json);
+    /// ```
+    pub fn with_envelope_mode(mut self, mode: EnvelopeMode) -> Self {
+        self.envelope.mode = mode;
+        self
+    }
+
+    /// Set the envelope layout (Flat or Nested).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{Ui, envelope::{EnvelopeMode, EnvelopeLayout}};
+    ///
+    /// let ui = Ui::new()
+    ///     .with_envelope_mode(EnvelopeMode::Json)
+    ///     .with_envelope_layout(EnvelopeLayout::Nested);
+    /// ```
+    pub fn with_envelope_layout(mut self, layout: EnvelopeLayout) -> Self {
+        self.envelope.layout = layout;
+        self
+    }
+
+    /// Set custom field names for the envelope.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{Ui, envelope::{EnvelopeMode, EnvelopeFields}};
+    ///
+    /// let ui = Ui::new()
+    ///     .with_envelope_mode(EnvelopeMode::Json)
+    ///     .with_envelope_fields(EnvelopeFields {
+    ///         ok_field: "success".into(),
+    ///         format_field: "type".into(),
+    ///         content_field: "result".into(),
+    ///         meta_field: "context".into(),
+    ///     });
+    /// ```
+    pub fn with_envelope_fields(mut self, fields: EnvelopeFields) -> Self {
+        self.envelope.fields = fields;
+        self
     }
 
     /// Set the output format (e.g., Markdown, JSON).
@@ -224,6 +302,9 @@ impl Ui {
 
     /// Render `Output` and print to stdout.
     ///
+    /// When envelope mode is `Json`, wraps the rendered output in a JSON
+    /// object with configurable field names and optional metadata.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -232,9 +313,44 @@ impl Ui {
     /// ui.print(&output)?;
     /// ```
     pub fn print(&self, output: &Output) -> Result<()> {
-        let rendered = self.render(output)?;
+        self.print_with_meta(output, None, true)
+    }
+
+    /// Render `Output` with metadata and print to stdout.
+    ///
+    /// When envelope mode is `Json`, attaches `meta` to the envelope.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use scriba::envelope::{EnvelopeMode, Meta};
+    ///
+    /// let ui = Ui::new().with_envelope_mode(EnvelopeMode::Json);
+    /// let meta = Meta::default().with_dry_run(true);
+    /// let output = Output::new().heading(1, "Deploy");
+    /// ui.print_with_meta(&output, Some(&meta), true)?;
+    /// ```
+    pub fn print_with_meta(
+        &self,
+        output: &Output,
+        meta: Option<&Meta>,
+        ok: bool,
+    ) -> Result<()> {
+        let text = if self.envelope.mode.is_json() {
+            let content = render::render_output_value(self.config.format, output)?;
+            let wrapped = envelope::wrap(
+                &self.envelope,
+                self.config.format.as_str(),
+                content,
+                meta,
+                ok,
+            );
+            serde_json::to_string_pretty(&wrapped)? + "\n"
+        } else {
+            self.render(output)?
+        };
         let mut stdout = io::stdout();
-        stdout.write_all(rendered.as_bytes())?;
+        stdout.write_all(text.as_bytes())?;
         stdout.flush()?;
         Ok(())
     }
