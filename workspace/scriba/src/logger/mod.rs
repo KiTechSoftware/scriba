@@ -1,19 +1,39 @@
+//! Styled stderr logging with verbosity control.
+//!
+//! Requires the `logger` feature. Access via `Ui::logger()`.
+
 use console::style;
 
-use crate::{ColorMode, Config, Level, Result};
+use crate::{ColorMode, Config, Level};
 
+/// Logger for styled, verbosity-aware stderr output.
+///
+/// Created via `Ui::logger()`. Respects config for colors and verbosity level.
+///
+/// # Examples
+///
+/// ```ignore
+/// let ui = Ui::new();
+/// let logger = ui.logger();
+///
+/// logger.heading("Building");
+/// logger.ok("Build succeeded");
+/// logger.info("Deployment starting");
+/// ```
 pub struct Logger<'a> {
     cfg: &'a Config,
 }
 
 impl<'a> Logger<'a> {
+    /// Create a new logger with the given config.
     pub fn new(cfg: &'a Config) -> Self {
         Self { cfg }
     }
 
-    pub fn heading(&self, message: &str) -> Result<()> {
+    /// Log a bold heading (shown unless level is `Quiet` or `Silent`).
+    pub fn heading(&self, message: &str) {
         if self.cfg.level <= Level::Quiet {
-            return Ok(());
+            return;
         }
 
         if use_color(self.cfg) {
@@ -21,49 +41,74 @@ impl<'a> Logger<'a> {
         } else {
             eprintln!("{message}");
         }
-
-        Ok(())
     }
 
-    pub fn info(&self, message: &str) -> Result<()> {
+    /// Log an info message (shown unless level is `Silent`).
+    pub fn info(&self, message: &str) {
         if self.cfg.level == Level::Silent {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "info"), message);
-        Ok(())
     }
 
-    pub fn ok(&self, message: &str) -> Result<()> {
+    /// Log a success/ok message (shown unless level is `Silent`).
+    pub fn ok(&self, message: &str) {
         if self.cfg.level == Level::Silent {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "ok"), message);
-        Ok(())
     }
 
-    pub fn warn(&self, message: &str) -> Result<()> {
+    /// Log a warning message (shown unless level is `Quiet` or `Silent`).
+    pub fn warn(&self, message: &str) {
         if self.cfg.level <= Level::Quiet {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "warn"), message);
-        Ok(())
+    }
+    
+    /// Log a warning key-value pair (shown unless level is `Quiet` or `Silent`).
+    pub fn warn_kv(&self, key: &str, value: &str) {
+        if self.cfg.level <= Level::Quiet {
+            return;
+        }
+
+        if use_color(self.cfg) {
+            eprintln!("  {}: {}", style(key).dim(), value);
+        } else {
+            eprintln!("  {key}: {value}");
+        }
     }
 
-    pub fn error(&self, message: &str) -> Result<()> {
+    /// Log an error message (shown unless level is `Silent`).
+    pub fn error(&self, message: &str) {
         if self.cfg.level == Level::Silent {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "error"), message);
-        Ok(())
     }
 
-    pub fn detail(&self, message: &str) -> Result<()> {
+    /// Log an error key-value pair (shown unless level is `Silent`).
+    pub fn error_kv(&self, key: &str, value: &str) {
+        if self.cfg.level == Level::Silent {
+            return;
+        }
+
+        if use_color(self.cfg) {
+            eprintln!("  {}: {}", style(key).dim(), value);
+        } else {
+            eprintln!("  {key}: {value}");
+        }
+    }
+
+    /// Log a detail message (shown only at `Verbose` or higher).
+    pub fn detail(&self, message: &str) {
         if self.cfg.level < Level::Verbose {
-            return Ok(());
+            return;
         }
 
         if use_color(self.cfg) {
@@ -71,31 +116,30 @@ impl<'a> Logger<'a> {
         } else {
             eprintln!("{message}");
         }
-
-        Ok(())
     }
 
-    pub fn debug(&self, message: &str) -> Result<()> {
+    /// Log a debug message (shown only at `Debug` or higher).
+    pub fn debug(&self, message: &str) {
         if self.cfg.level < Level::Debug {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "debug"), message);
-        Ok(())
     }
 
-    pub fn trace(&self, message: &str) -> Result<()> {
+    /// Log a trace message (shown only at `Trace` level).
+    pub fn trace(&self, message: &str) {
         if self.cfg.level < Level::Trace {
-            return Ok(());
+            return;
         }
 
         eprintln!("{} {}", tag(self.cfg, "trace"), message);
-        Ok(())
     }
 
-    pub fn kv(&self, key: &str, value: &str) -> Result<()> {
+    /// Log a key-value pair detail (shown only at `Verbose` or higher).
+    pub fn kv(&self, key: &str, value: &str) {
         if self.cfg.level < Level::Verbose {
-            return Ok(());
+            return;
         }
 
         if use_color(self.cfg) {
@@ -103,8 +147,31 @@ impl<'a> Logger<'a> {
         } else {
             eprintln!("{key}: {value}");
         }
+    }
 
-        Ok(())
+    /// Log a list item (shown only at `Verbose` or higher).
+    pub fn list_item(&self, message: &str) {
+        if self.cfg.level < Level::Verbose {
+            return;
+        }
+
+        eprintln!("- {message}");
+    }
+
+    /// Log a summary with title and multiple lines (shown only at `Verbose` or higher).
+    pub fn summary(&self, title: &str, lines: &[String]) {
+        if self.cfg.level < Level::Verbose {
+            return;
+        }
+
+        if use_color(self.cfg) {
+            eprintln!("{}", style(title).bold());
+        } else {
+            eprintln!("{title}");
+        }
+        for line in lines {
+            eprintln!("{line}");
+        }
     }
 }
 
