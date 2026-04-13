@@ -5,14 +5,30 @@ use ::inquire::{
 
 use crate::{Config, Error, Result};
 
+/// A selectable option with id and label.
+///
+/// Used in `SelectRequest` for single-choice prompts.
+///
+/// # Example
+///
+/// ```
+/// use scriba::SelectOption;
+///
+/// let option = SelectOption::new("dev", "Development")
+///     .description("Local development environment");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectOption {
+    /// Unique identifier for this option.
     pub id: String,
+    /// Display label for this option.
     pub label: String,
+    /// Optional description shown below label.
     pub description: Option<String>,
 }
 
 impl SelectOption {
+    /// Create a new selectable option.
     pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -21,6 +37,7 @@ impl SelectOption {
         }
     }
 
+    /// Add a description to this option.
     pub fn description(mut self, value: impl Into<String>) -> Self {
         self.description = Some(value.into());
         self
@@ -34,15 +51,33 @@ impl SelectOption {
     }
 }
 
+/// A selectable option for multi-select prompts.
+///
+/// Used in `MultiSelectRequest`. Can be pre-selected.
+///
+/// # Example
+///
+/// ```
+/// use scriba::MultiSelectOption;
+///
+/// let option = MultiSelectOption::new("logger", "Logger")
+///     .description("Styled logging")
+///     .selected(true);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSelectOption {
+    /// Unique identifier for this option.
     pub id: String,
+    /// Display label for this option.
     pub label: String,
+    /// Optional description shown below label.
     pub description: Option<String>,
+    /// Whether this option is pre-selected.
     pub selected: bool,
 }
 
 impl MultiSelectOption {
+    /// Create a new multi-select option.
     pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -52,11 +87,13 @@ impl MultiSelectOption {
         }
     }
 
+    /// Add a description to this option.
     pub fn description(mut self, value: impl Into<String>) -> Self {
         self.description = Some(value.into());
         self
     }
 
+    /// Set whether this option is pre-selected.
     pub fn selected(mut self, value: bool) -> Self {
         self.selected = value;
         self
@@ -70,13 +107,31 @@ impl MultiSelectOption {
     }
 }
 
+/// Request for single-choice selection prompt.
+///
+/// # Example
+///
+/// ```
+/// use scriba::{SelectRequest, SelectOption};
+///
+/// let request = SelectRequest::new(
+///     "Choose environment",
+///     vec![
+///         SelectOption::new("dev", "Development"),
+///         SelectOption::new("prod", "Production"),
+///     ],
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectRequest {
+    /// Prompt message to display.
     pub message: String,
+    /// Available options to choose from.
     pub options: Vec<SelectOption>,
 }
 
 impl SelectRequest {
+    /// Create a new select request.
     pub fn new(message: impl Into<String>, options: Vec<SelectOption>) -> Self {
         Self {
             message: message.into(),
@@ -85,13 +140,31 @@ impl SelectRequest {
     }
 }
 
+/// Request for multi-choice selection prompt.
+///
+/// # Example
+///
+/// ```
+/// use scriba::{MultiSelectRequest, MultiSelectOption};
+///
+/// let request = MultiSelectRequest::new(
+///     "Select features",
+///     vec![
+///         MultiSelectOption::new("logging", "Logging").selected(true),
+///         MultiSelectOption::new("prompts", "Prompts"),
+///     ],
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSelectRequest {
+    /// Prompt message to display.
     pub message: String,
+    /// Available options to choose from.
     pub options: Vec<MultiSelectOption>,
 }
 
 impl MultiSelectRequest {
+    /// Create a new multi-select request.
     pub fn new(message: impl Into<String>, options: Vec<MultiSelectOption>) -> Self {
         Self {
             message: message.into(),
@@ -118,6 +191,20 @@ fn theme<'a>() -> RenderConfig<'a> {
         .with_default_value(StyleSheet::new().with_fg(Color::DarkGrey))
 }
 
+/// Prompt for text input.
+///
+/// Returns `Error::InteractiveRequired` if not in interactive mode.
+///
+/// # Example
+///
+/// ```ignore
+/// let response = scriba::prompt::text(
+///     &config,
+///     "Your name?",
+///     Some("Anonymous"),
+///     None,
+/// )?;
+/// ```
 pub fn text(
     cfg: &Config,
     message: &str,
@@ -141,6 +228,18 @@ pub fn text(
     prompt.prompt().map_err(map_inquire_error)
 }
 
+/// Prompt for yes/no confirmation.
+///
+/// Auto-returns `Ok(true)` if `config.auto_yes` is enabled.
+/// Returns the default value if not in interactive mode.
+///
+/// # Example
+///
+/// ```ignore
+/// if scriba::prompt::confirm(&config, "Continue?", false)? {
+///     println!("Confirmed!");
+/// }
+/// ```
 pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
     if cfg.auto_yes {
         return Ok(true);
@@ -157,6 +256,21 @@ pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
         .map_err(map_inquire_error)
 }
 
+/// Prompt user to select one option from a list.
+///
+/// Returns the `id` of the selected option.
+///
+/// # Example
+///
+/// ```ignore
+/// use scriba::{prompt, SelectRequest, SelectOption};
+///
+/// let request = SelectRequest::new(
+///     "Pick one",
+///     vec![SelectOption::new("a", "Option A")],
+/// );
+/// let id = prompt::select(&config, &request)?;
+/// ```
 pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
@@ -183,6 +297,21 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
     Ok(id)
 }
 
+/// Prompt user to select multiple options from a list.
+///
+/// Returns the `id`s of the selected options.
+///
+/// # Example
+///
+/// ```ignore
+/// use scriba::{prompt, MultiSelectRequest, MultiSelectOption};
+///
+/// let request = MultiSelectRequest::new(
+///     "Pick multiple",
+///     vec![MultiSelectOption::new("a", "Option A")],
+/// );
+/// let ids = prompt::multiselect(&config, &request)?;
+/// ```
 pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<String>> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
