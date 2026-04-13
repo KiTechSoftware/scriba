@@ -69,7 +69,7 @@ impl<'a> Logger<'a> {
 
         eprintln!("{} {}", tag(self.cfg, "warn"), message);
     }
-    
+
     /// Log a warning key-value pair (shown unless level is `Quiet` or `Silent`).
     pub fn warn_kv(&self, key: &str, value: &str) {
         if self.cfg.level <= Level::Quiet {

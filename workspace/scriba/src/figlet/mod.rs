@@ -69,7 +69,7 @@ pub fn render_with_font(text: &str, font: &str) -> Result<String> {
         "future" => render_font!(Toilet::future()),
         "wideterm" => render_font!(Toilet::wideterm()),
         "mono9" => render_font!(Toilet::mono9()),
-        
+
         _ if looks_like_file(font) => {
             if font.ends_with(".tlf") {
                 render_font!(Toilet::from_file(font))

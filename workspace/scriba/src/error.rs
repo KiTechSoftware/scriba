@@ -109,7 +109,7 @@ mod tests {
     fn io_error_converts_to_scriba_error() {
         let io_err = io::Error::new(io::ErrorKind::NotFound, "test error");
         let scriba_err: ScribaError = io_err.into();
-        
+
         match scriba_err {
             ScribaError::Io(msg) => assert!(msg.contains("test error")),
             _ => panic!("expected Io error"),
@@ -120,9 +120,9 @@ mod tests {
     fn json_error_converts_to_scriba_error() {
         let json_err = serde_json::from_str::<serde_json::Value>("invalid json").unwrap_err();
         let scriba_err: ScribaError = json_err.into();
-        
+
         match scriba_err {
-            ScribaError::Serialization(_) => {}, // Expected
+            ScribaError::Serialization(_) => {} // Expected
             _ => panic!("expected Serialization error"),
         }
     }

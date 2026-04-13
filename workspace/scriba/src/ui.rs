@@ -254,7 +254,7 @@ mod tests {
     fn ui_new_creates_default_config() {
         let ui = Ui::new();
         let config = ui.config();
-        
+
         assert!(!config.interactive);
         assert!(!config.auto_yes);
         assert_eq!(config.format, Format::Text);

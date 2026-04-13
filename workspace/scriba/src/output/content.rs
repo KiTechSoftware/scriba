@@ -197,7 +197,12 @@ impl Output {
     /// Add a section with a heading and code block.
     ///
     /// Convenience method that adds both a level-2 heading and code block.
-    pub fn section(mut self, title: impl Into<String>, content: impl Into<String>, language: impl Into<Option<String>>) -> Self {
+    pub fn section(
+        mut self,
+        title: impl Into<String>,
+        content: impl Into<String>,
+        language: impl Into<Option<String>>,
+    ) -> Self {
         self.blocks.push(Block::Heading {
             level: 2,
             text: title.into(),
@@ -238,52 +243,30 @@ impl Output {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Block {
     /// Heading at the specified level (1-6).
-    Heading {
-        level: u8,
-        text: String,
-    },
+    Heading { level: u8, text: String },
     /// A paragraph of text.
-    Paragraph {
-        text: String,
-    },
+    Paragraph { text: String },
     /// A single line of text.
-    Line {
-        text: String,
-    },
+    Line { text: String },
     /// A visual separator/divider.
     Separator,
     /// An ordered or unordered list.
-    List {
-        ordered: bool,
-        items: Vec<String>,
-    },
+    List { ordered: bool, items: Vec<String> },
     /// A code block with optional language hint.
     Code {
         language: Option<String>,
         code: String,
     },
     /// A structured data table.
-    Table {
-        title: Option<String>,
-        table: Table,
-    },
+    Table { title: Option<String>, table: Table },
     /// Raw JSON data.
-    Json {
-        value: Value,
-    },
+    Json { value: Value },
     /// Key-value pairs.
-    KeyValue {
-        entries: Vec<KeyValueEntry>,
-    },
+    KeyValue { entries: Vec<KeyValueEntry> },
     /// Term definitions.
-    DefinitionList {
-        entries: Vec<DefinitionEntry>,
-    },
+    DefinitionList { entries: Vec<DefinitionEntry> },
     /// Status indicator (ok, warning, error).
-    Status {
-        kind: StatusKind,
-        text: String,
-    },
+    Status { kind: StatusKind, text: String },
 }
 
 /// A structured data table with headers and rows.
@@ -382,7 +365,7 @@ impl Table {
             index_header: self.index_header.clone(),
         }
     }
-    
+
     /// Convert table to JSON value.
     pub fn to_json_value(&self) -> Value {
         serde_json::to_value(self.materialized()).unwrap_or(Value::Null)

@@ -4,9 +4,7 @@ use scriba::{
 };
 
 fn main() -> scriba::Result<()> {
-    let ui = Ui::new()
-        .with_format(Format::Plain)
-        .interactive(true);
+    let ui = Ui::new().with_format(Format::Plain).interactive(true);
 
     ui.logger().heading("scriba demo");
     ui.logger().info("starting interactive demo");
@@ -37,9 +35,7 @@ fn main() -> scriba::Result<()> {
     };
 
     // Create UI with selected format
-    let ui = Ui::new()
-        .with_format(selected_format)
-        .interactive(true);
+    let ui = Ui::new().with_format(selected_format).interactive(true);
 
     let project_name = ui.text(
         "Project name?",
@@ -68,8 +64,7 @@ fn main() -> scriba::Result<()> {
             vec![
                 MultiSelectOption::new("prompt", "Prompt")
                     .description("interactive inquire wrapper"),
-                MultiSelectOption::new("logger", "Logger")
-                    .description("styled stderr logging"),
+                MultiSelectOption::new("logger", "Logger").description("styled stderr logging"),
                 MultiSelectOption::new("figlet", "Figlet")
                     .description("ascii banner rendering")
                     .selected(true),
