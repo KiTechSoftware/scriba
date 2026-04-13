@@ -4,10 +4,12 @@ use scriba::{
 };
 
 fn main() -> scriba::Result<()> {
-    let ui = Ui::new().with_format(Format::Markdown).interactive(true);
+    let ui = Ui::new()
+        .with_format(Format::Plain)
+        .interactive(true);
 
-    ui.logger().heading("scriba demo")?;
-    ui.logger().info("starting interactive demo")?;
+    ui.logger().heading("scriba demo");
+    ui.logger().info("starting interactive demo");
 
     let banner = figlet::render("scriba")?;
     println!("{banner}");
@@ -20,7 +22,7 @@ fn main() -> scriba::Result<()> {
 
     let confirm_release = ui.confirm("Continue with demo output?", true)?;
     if !confirm_release {
-        ui.logger().warn("demo cancelled by user")?;
+        ui.logger().warn("demo cancelled by user");
         return Ok(());
     }
 
@@ -47,10 +49,10 @@ fn main() -> scriba::Result<()> {
         ],
     ))?;
 
-    ui.logger().ok("prompt phase complete")?;
-    ui.logger().kv("project", &project_name)?;
-    ui.logger().kv("environment", &environment)?;
-    ui.logger().kv("selected_features", &features.join(", "))?;
+    ui.logger().ok("prompt phase complete");
+    ui.logger().kv("project", &project_name);
+    ui.logger().kv("environment", &environment);
+    ui.logger().kv("selected_features", &features.join(", "));
 
     let feature_rows = features
         .iter()
@@ -71,6 +73,7 @@ fn main() -> scriba::Result<()> {
 
     let output = Output::new()
         .title("scriba demo")
+        .plain("passed")
         .subtitle("full integration smoke test")
         .data("project", &project_name)
         .data("environment", &environment)
@@ -111,6 +114,6 @@ fn main() -> scriba::Result<()> {
 
     ui.print(&output)?;
 
-    ui.logger().ok("demo finished successfully")?;
+    ui.logger().ok("demo finished successfully");
     Ok(())
 }
