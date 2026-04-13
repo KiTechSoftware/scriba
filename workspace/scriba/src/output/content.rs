@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 ///     .title("Report")
 ///     .heading(1, "Summary")
 ///     .paragraph("All systems operational")
-///     .status(StatusKind::Ok, "Complete");
+///     .status(StatusKind::Success, "Complete");
 /// ```
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Output {

@@ -14,6 +14,33 @@ fn main() -> scriba::Result<()> {
     let banner = figlet::render("scriba")?;
     println!("{banner}");
 
+    // Select output format
+    let format_id = ui.select(&SelectRequest::new(
+        "Select output format",
+        vec![
+            SelectOption::new("plain", "Plain").description("scalar output only"),
+            SelectOption::new("text", "Text").description("human-readable with basic formatting"),
+            SelectOption::new("markdown", "Markdown").description("markdown-formatted output"),
+            SelectOption::new("json", "JSON").description("pretty-printed JSON object"),
+            SelectOption::new("jsonl", "JSONL").description("newline-delimited JSON records"),
+        ],
+    ))?;
+
+    // Parse format selection and create new UI with that format
+    let selected_format = match format_id.as_str() {
+        "plain" => Format::Plain,
+        "text" => Format::Text,
+        "markdown" => Format::Markdown,
+        "json" => Format::Json,
+        "jsonl" => Format::Jsonl,
+        _ => Format::Text,
+    };
+
+    // Create UI with selected format
+    let ui = Ui::new()
+        .with_format(selected_format)
+        .interactive(true);
+
     let project_name = ui.text(
         "Project name?",
         Some("scriba-demo"),
@@ -77,6 +104,7 @@ fn main() -> scriba::Result<()> {
         .subtitle("full integration smoke test")
         .data("project", &project_name)
         .data("environment", &environment)
+        .data("format", &format_id)
         .data("feature_count", features.len())
         .heading(1, "Summary")
         .paragraph(format!(
@@ -89,6 +117,7 @@ fn main() -> scriba::Result<()> {
         .json(serde_json::json!({
             "project": project_name,
             "environment": environment,
+            "format": format_id,
             "features": features,
         }))
         .heading(2, "Next steps")
