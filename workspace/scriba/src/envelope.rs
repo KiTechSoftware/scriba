@@ -209,6 +209,33 @@ impl Meta {
         self
     }
 
+    /// Add multiple extra key-value pairs from any iterator of `(key, value)` tuples.
+    ///
+    /// Useful for inserting a batch of arbitrary metadata without chaining
+    /// multiple `with_extra()` calls.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::envelope::Meta;
+    /// use std::collections::BTreeMap;
+    ///
+    /// let mut extras = BTreeMap::new();
+    /// extras.insert("region".to_string(), serde_json::json!("eu-west-1"));
+    /// extras.insert("actor".to_string(), serde_json::json!("ci-bot"));
+    ///
+    /// let meta = Meta::default().with_extra_map(extras);
+    /// assert_eq!(meta.extra.get("region").unwrap(), "eu-west-1");
+    /// assert_eq!(meta.extra.get("actor").unwrap(), "ci-bot");
+    /// ```
+    pub fn with_extra_map(
+        mut self,
+        map: impl IntoIterator<Item = (String, Value)>,
+    ) -> Self {
+        self.extra.extend(map);
+        self
+    }
+
     /// Returns `true` if all fields are `None` and `extra` is empty.
     pub fn is_empty(&self) -> bool {
         self.dry_run.is_none()
@@ -461,6 +488,35 @@ mod tests {
     fn meta_with_extra() {
         let m = Meta::default().with_extra("region", "eu-west-1");
         assert_eq!(m.extra.get("region").unwrap(), "eu-west-1");
+    }
+
+    #[test]
+    fn meta_with_extra_map_inserts_all_entries() {
+        let map = [
+            ("region".to_string(), serde_json::json!("eu-west-1")),
+            ("actor".to_string(), serde_json::json!("ci-bot")),
+            ("run_id".to_string(), serde_json::json!(42u64)),
+        ];
+        let m = Meta::default().with_extra_map(map);
+        assert_eq!(m.extra.get("region").unwrap(), "eu-west-1");
+        assert_eq!(m.extra.get("actor").unwrap(), "ci-bot");
+        assert_eq!(m.extra.get("run_id").unwrap(), 42u64);
+        assert!(!m.is_empty());
+    }
+
+    #[test]
+    fn meta_with_extra_map_empty_iterator() {
+        let m = Meta::default().with_extra_map(std::iter::empty());
+        assert!(m.extra.is_empty());
+    }
+
+    #[test]
+    fn meta_with_extra_map_merges_with_existing_extra() {
+        let m = Meta::default()
+            .with_extra("a", "first")
+            .with_extra_map([("b".to_string(), serde_json::json!("second"))]);
+        assert_eq!(m.extra.get("a").unwrap(), "first");
+        assert_eq!(m.extra.get("b").unwrap(), "second");
     }
 
     #[test]
