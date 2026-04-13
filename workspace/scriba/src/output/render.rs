@@ -163,7 +163,7 @@ fn render_text_block(block: &Block, out: &mut String) -> Result<()> {
                 out.push_str(title);
                 out.push('\n');
                 out.push_str(&"-".repeat(title.chars().count()));
-                out.push_str("\n");
+                out.push('\n');
             }
 
             out.push_str(&table::render_text_table(tbl)?);
@@ -283,8 +283,10 @@ fn value_to_inline_string(value: &Value) -> String {
 fn status_label(kind: StatusKind) -> &'static str {
     match kind {
         StatusKind::Info => "info",
-        StatusKind::Success => "success",
+        StatusKind::Ok => "success",
         StatusKind::Warning => "warning",
         StatusKind::Error => "error",
+        #[allow(deprecated)]
+        StatusKind::Success => "success",
     }
 }

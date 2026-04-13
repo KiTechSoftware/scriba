@@ -5,14 +5,30 @@ use ::inquire::{
 
 use crate::{Config, Error, Result};
 
+/// A selectable option with id and label.
+///
+/// Used in `SelectRequest` for single-choice prompts.
+///
+/// # Example
+///
+/// ```
+/// use scriba::SelectOption;
+///
+/// let option = SelectOption::new("dev", "Development")
+///     .description("Local development environment");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectOption {
+    /// Unique identifier for this option.
     pub id: String,
+    /// Display label for this option.
     pub label: String,
+    /// Optional description shown below label.
     pub description: Option<String>,
 }
 
 impl SelectOption {
+    /// Create a new selectable option.
     pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -21,6 +37,7 @@ impl SelectOption {
         }
     }
 
+    /// Add a description to this option.
     pub fn description(mut self, value: impl Into<String>) -> Self {
         self.description = Some(value.into());
         self
@@ -34,15 +51,33 @@ impl SelectOption {
     }
 }
 
+/// A selectable option for multi-select prompts.
+///
+/// Used in `MultiSelectRequest`. Can be pre-selected.
+///
+/// # Example
+///
+/// ```
+/// use scriba::MultiSelectOption;
+///
+/// let option = MultiSelectOption::new("logger", "Logger")
+///     .description("Styled logging")
+///     .selected(true);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSelectOption {
+    /// Unique identifier for this option.
     pub id: String,
+    /// Display label for this option.
     pub label: String,
+    /// Optional description shown below label.
     pub description: Option<String>,
+    /// Whether this option is pre-selected.
     pub selected: bool,
 }
 
 impl MultiSelectOption {
+    /// Create a new multi-select option.
     pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -52,11 +87,13 @@ impl MultiSelectOption {
         }
     }
 
+    /// Add a description to this option.
     pub fn description(mut self, value: impl Into<String>) -> Self {
         self.description = Some(value.into());
         self
     }
 
+    /// Set whether this option is pre-selected.
     pub fn selected(mut self, value: bool) -> Self {
         self.selected = value;
         self
@@ -70,13 +107,31 @@ impl MultiSelectOption {
     }
 }
 
+/// Request for single-choice selection prompt.
+///
+/// # Example
+///
+/// ```
+/// use scriba::{SelectRequest, SelectOption};
+///
+/// let request = SelectRequest::new(
+///     "Choose environment",
+///     vec![
+///         SelectOption::new("dev", "Development"),
+///         SelectOption::new("prod", "Production"),
+///     ],
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectRequest {
+    /// Prompt message to display.
     pub message: String,
+    /// Available options to choose from.
     pub options: Vec<SelectOption>,
 }
 
 impl SelectRequest {
+    /// Create a new select request.
     pub fn new(message: impl Into<String>, options: Vec<SelectOption>) -> Self {
         Self {
             message: message.into(),
@@ -85,18 +140,63 @@ impl SelectRequest {
     }
 }
 
+/// Request for multi-choice selection prompt.
+///
+/// Supports optional pagination via `with_page_size()` for large option lists.
+///
+/// # Example
+///
+/// ```
+/// use scriba::{MultiSelectRequest, MultiSelectOption};
+///
+/// let request = MultiSelectRequest::new(
+///     "Select features",
+///     vec![
+///         MultiSelectOption::new("logging", "Logging").selected(true),
+///         MultiSelectOption::new("prompts", "Prompts"),
+///     ],
+/// )
+/// .with_page_size(5);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSelectRequest {
+    /// Prompt message to display.
     pub message: String,
+    /// Available options to choose from.
     pub options: Vec<MultiSelectOption>,
+    /// Optional page size for pagination (default: 7).
+    pub page_size: Option<usize>,
 }
 
 impl MultiSelectRequest {
+    /// Create a new multi-select request.
     pub fn new(message: impl Into<String>, options: Vec<MultiSelectOption>) -> Self {
         Self {
             message: message.into(),
             options,
+            page_size: None,
         }
+    }
+
+    /// Set pagination page size for large option lists.
+    ///
+    /// If the number of options exceeds this size, users can scroll through pages.
+    /// When `None` (default), inquire uses its default page size of 7.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{MultiSelectRequest, MultiSelectOption};
+    ///
+    /// let request = MultiSelectRequest::new(
+    ///     "Select items",
+    ///     vec![MultiSelectOption::new("item1", "Item 1")],
+    /// )
+    /// .with_page_size(10);
+    /// ```
+    pub fn with_page_size(mut self, size: usize) -> Self {
+        self.page_size = Some(size);
+        self
     }
 }
 
@@ -118,6 +218,20 @@ fn theme<'a>() -> RenderConfig<'a> {
         .with_default_value(StyleSheet::new().with_fg(Color::DarkGrey))
 }
 
+/// Prompt for text input.
+///
+/// Returns `Error::InteractiveRequired` if not in interactive mode.
+///
+/// # Example
+///
+/// ```ignore
+/// let response = scriba::prompt::text(
+///     &config,
+///     "Your name?",
+///     Some("Anonymous"),
+///     None,
+/// )?;
+/// ```
 pub fn text(
     cfg: &Config,
     message: &str,
@@ -141,6 +255,18 @@ pub fn text(
     prompt.prompt().map_err(map_inquire_error)
 }
 
+/// Prompt for yes/no confirmation.
+///
+/// Auto-returns `Ok(true)` if `config.auto_yes` is enabled.
+/// Returns the default value if not in interactive mode.
+///
+/// # Example
+///
+/// ```ignore
+/// if scriba::prompt::confirm(&config, "Continue?", false)? {
+///     println!("Confirmed!");
+/// }
+/// ```
 pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
     if cfg.auto_yes {
         return Ok(true);
@@ -157,6 +283,21 @@ pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
         .map_err(map_inquire_error)
 }
 
+/// Prompt user to select one option from a list.
+///
+/// Returns the `id` of the selected option.
+///
+/// # Example
+///
+/// ```ignore
+/// use scriba::{prompt, SelectRequest, SelectOption};
+///
+/// let request = SelectRequest::new(
+///     "Pick one",
+///     vec![SelectOption::new("a", "Option A")],
+/// );
+/// let id = prompt::select(&config, &request)?;
+/// ```
 pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
@@ -183,6 +324,21 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
     Ok(id)
 }
 
+/// Prompt user to select multiple options from a list.
+///
+/// Returns the `id`s of the selected options.
+///
+/// # Example
+///
+/// ```ignore
+/// use scriba::{prompt, MultiSelectRequest, MultiSelectOption};
+///
+/// let request = MultiSelectRequest::new(
+///     "Pick multiple",
+///     vec![MultiSelectOption::new("a", "Option A")],
+/// );
+/// let ids = prompt::multiselect(&config, &request)?;
+/// ```
 pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<String>> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
@@ -201,11 +357,15 @@ pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<Str
         .filter_map(|(idx, option)| option.selected.then_some(idx))
         .collect::<Vec<_>>();
 
-    let selected = MultiSelect::new(&request.message, options)
+    let mut multiselect = MultiSelect::new(&request.message, options)
         .with_render_config(theme())
-        .with_default(&defaults)
-        .prompt()
-        .map_err(map_inquire_error)?;
+        .with_default(&defaults);
+
+    if let Some(page_size) = request.page_size {
+        multiselect = multiselect.with_page_size(page_size);
+    }
+
+    let selected = multiselect.prompt().map_err(map_inquire_error)?;
 
     let ids = request
         .options
@@ -222,5 +382,123 @@ fn map_inquire_error(err: ::inquire::InquireError) -> Error {
         ::inquire::InquireError::OperationCanceled
         | ::inquire::InquireError::OperationInterrupted => Error::PromptCancelled,
         other => Error::Prompt(other.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn select_option_new_creates_with_id_and_label() {
+        let option = SelectOption::new("dev", "Development");
+        assert_eq!(option.id, "dev");
+        assert_eq!(option.label, "Development");
+        assert_eq!(option.description, None);
+    }
+
+    #[test]
+    fn select_option_description_sets_description() {
+        let option = SelectOption::new("dev", "Development").description("Local environment");
+        assert_eq!(option.description, Some("Local environment".into()));
+    }
+
+    #[test]
+    fn select_option_display_includes_description() {
+        let option = SelectOption::new("dev", "Development").description("Local environment");
+        assert_eq!(option.display(), "Development — Local environment");
+    }
+
+    #[test]
+    fn select_option_display_without_description() {
+        let option = SelectOption::new("dev", "Development");
+        assert_eq!(option.display(), "Development");
+    }
+
+    #[test]
+    fn multi_select_option_new_creates_unselected() {
+        let option = MultiSelectOption::new("logger", "Logger");
+        assert_eq!(option.id, "logger");
+        assert_eq!(option.label, "Logger");
+        assert!(!option.selected);
+        assert_eq!(option.description, None);
+    }
+
+    #[test]
+    fn multi_select_option_selected_sets_flag() {
+        let option = MultiSelectOption::new("logger", "Logger").selected(true);
+        assert!(option.selected);
+    }
+
+    #[test]
+    fn multi_select_option_description_sets_description() {
+        let option = MultiSelectOption::new("logger", "Logger").description("Logging system");
+        assert_eq!(option.description, Some("Logging system".into()));
+    }
+
+    #[test]
+    fn multi_select_option_builder_is_fluent() {
+        let option = MultiSelectOption::new("logger", "Logger")
+            .description("Logging system")
+            .selected(true);
+        assert!(option.selected);
+        assert_eq!(option.description, Some("Logging system".into()));
+    }
+
+    #[test]
+    fn multi_select_option_display_includes_description() {
+        let option = MultiSelectOption::new("logger", "Logger").description("Logging system");
+        assert_eq!(option.display(), "Logger — Logging system");
+    }
+
+    #[test]
+    fn multi_select_option_display_without_description() {
+        let option = MultiSelectOption::new("logger", "Logger");
+        assert_eq!(option.display(), "Logger");
+    }
+
+    #[test]
+    fn select_request_new_creates_with_message_and_options() {
+        let options = vec![SelectOption::new("a", "Option A")];
+        let request = SelectRequest::new("Choose", options.clone());
+        assert_eq!(request.message, "Choose");
+        assert_eq!(request.options, options);
+    }
+
+    #[test]
+    fn multi_select_request_new_creates_with_no_page_size() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options.clone());
+        assert_eq!(request.message, "Select");
+        assert_eq!(request.options, options);
+        assert_eq!(request.page_size, None);
+    }
+
+    #[test]
+    fn multi_select_request_with_page_size_sets_page_size() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options).with_page_size(5);
+        assert_eq!(request.page_size, Some(5));
+    }
+
+    #[test]
+    fn multi_select_request_builder_is_fluent() {
+        let options = vec![
+            MultiSelectOption::new("a", "Option A"),
+            MultiSelectOption::new("b", "Option B"),
+        ];
+        let request = MultiSelectRequest::new("Select items", options).with_page_size(10);
+        assert_eq!(request.message, "Select items");
+        assert_eq!(request.options.len(), 2);
+        assert_eq!(request.page_size, Some(10));
+    }
+
+    #[test]
+    fn multi_select_request_page_size_can_be_changed() {
+        let options = vec![MultiSelectOption::new("a", "Option A")];
+        let request = MultiSelectRequest::new("Select", options)
+            .with_page_size(5)
+            .with_page_size(10);
+        assert_eq!(request.page_size, Some(10));
     }
 }

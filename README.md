@@ -21,7 +21,7 @@
 scriba = "0.1"
 
 # optional features
-scriba = { version = "0.1", features = ["prompt", "logger", "figlet"] }
+scriba = { version = "0.2", features = ["prompt", "logger", "figlet"] }
 ```
 
 ### Feature Flags
@@ -254,14 +254,14 @@ Use semantic states for results and summaries.
 use scriba::{Output, StatusKind};
 
 let output = Output::new()
-    .status(StatusKind::Success, "Deployment complete")
+    .status(StatusKind::Ok, "Deployment complete")
     .status(StatusKind::Warning, "Using cached config");
 ```
 
 Available kinds:
 
 - `StatusKind::Info`
-- `StatusKind::Success`
+- `StatusKind::Ok`
 - `StatusKind::Warning`
 - `StatusKind::Error`
 

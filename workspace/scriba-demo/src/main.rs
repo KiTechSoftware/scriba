@@ -4,13 +4,38 @@ use scriba::{
 };
 
 fn main() -> scriba::Result<()> {
-    let ui = Ui::new().with_format(Format::Markdown).interactive(true);
+    let ui = Ui::new().with_format(Format::Plain).interactive(true);
 
-    ui.logger().heading("scriba demo")?;
-    ui.logger().info("starting interactive demo")?;
+    ui.logger().heading("scriba demo");
+    ui.logger().info("starting interactive demo");
 
     let banner = figlet::render("scriba")?;
     println!("{banner}");
+
+    // Select output format
+    let format_id = ui.select(&SelectRequest::new(
+        "Select output format",
+        vec![
+            SelectOption::new("plain", "Plain").description("scalar output only"),
+            SelectOption::new("text", "Text").description("human-readable with basic formatting"),
+            SelectOption::new("markdown", "Markdown").description("markdown-formatted output"),
+            SelectOption::new("json", "JSON").description("pretty-printed JSON object"),
+            SelectOption::new("jsonl", "JSONL").description("newline-delimited JSON records"),
+        ],
+    ))?;
+
+    // Parse format selection and create new UI with that format
+    let selected_format = match format_id.as_str() {
+        "plain" => Format::Plain,
+        "text" => Format::Text,
+        "markdown" => Format::Markdown,
+        "json" => Format::Json,
+        "jsonl" => Format::Jsonl,
+        _ => Format::Text,
+    };
+
+    // Create UI with selected format
+    let ui = Ui::new().with_format(selected_format).interactive(true);
 
     let project_name = ui.text(
         "Project name?",
@@ -20,7 +45,7 @@ fn main() -> scriba::Result<()> {
 
     let confirm_release = ui.confirm("Continue with demo output?", true)?;
     if !confirm_release {
-        ui.logger().warn("demo cancelled by user")?;
+        ui.logger().warn("demo cancelled by user");
         return Ok(());
     }
 
@@ -33,24 +58,32 @@ fn main() -> scriba::Result<()> {
         ],
     ))?;
 
-    let features = ui.multiselect(&MultiSelectRequest::new(
-        "Select enabled capabilities",
-        vec![
-            MultiSelectOption::new("prompt", "Prompt").description("interactive inquire wrapper"),
-            MultiSelectOption::new("logger", "Logger").description("styled stderr logging"),
-            MultiSelectOption::new("figlet", "Figlet")
-                .description("ascii banner rendering")
-                .selected(true),
-            MultiSelectOption::new("markdown", "Markdown")
-                .description("structured markdown output")
-                .selected(true),
-        ],
-    ))?;
+    let features = ui.multiselect(
+        &MultiSelectRequest::new(
+            "Select enabled capabilities",
+            vec![
+                MultiSelectOption::new("prompt", "Prompt")
+                    .description("interactive inquire wrapper"),
+                MultiSelectOption::new("logger", "Logger").description("styled stderr logging"),
+                MultiSelectOption::new("figlet", "Figlet")
+                    .description("ascii banner rendering")
+                    .selected(true),
+                MultiSelectOption::new("markdown", "Markdown")
+                    .description("structured markdown output")
+                    .selected(true),
+                MultiSelectOption::new("table", "Table").description("formatted tables"),
+                MultiSelectOption::new("json", "JSON").description("json serialization"),
+                MultiSelectOption::new("colors", "Colors").description("terminal colors"),
+                MultiSelectOption::new("async", "Async").description("async/await support"),
+            ],
+        )
+        .with_page_size(5),
+    )?;
 
-    ui.logger().ok("prompt phase complete")?;
-    ui.logger().kv("project", &project_name)?;
-    ui.logger().kv("environment", &environment)?;
-    ui.logger().kv("selected_features", &features.join(", "))?;
+    ui.logger().ok("prompt phase complete");
+    ui.logger().kv("project", &project_name);
+    ui.logger().kv("environment", &environment);
+    ui.logger().kv("selected_features", &features.join(", "));
 
     let feature_rows = features
         .iter()
@@ -71,9 +104,11 @@ fn main() -> scriba::Result<()> {
 
     let output = Output::new()
         .title("scriba demo")
+        .plain("passed")
         .subtitle("full integration smoke test")
         .data("project", &project_name)
         .data("environment", &environment)
+        .data("format", &format_id)
         .data("feature_count", features.len())
         .heading(1, "Summary")
         .paragraph(format!(
@@ -86,6 +121,7 @@ fn main() -> scriba::Result<()> {
         .json(serde_json::json!({
             "project": project_name,
             "environment": environment,
+            "format": format_id,
             "features": features,
         }))
         .heading(2, "Next steps")
@@ -111,6 +147,6 @@ fn main() -> scriba::Result<()> {
 
     ui.print(&output)?;
 
-    ui.logger().ok("demo finished successfully")?;
+    ui.logger().ok("demo finished successfully");
     Ok(())
 }
