@@ -1,3 +1,32 @@
+//! `scriba` — Typed CLI output, prompts, and terminal rendering for Rust.
+//!
+//! Build clean, structured command-line interfaces with composable output primitives,
+//! interactive prompts, styled logging, and optional ASCII banners.
+//!
+//! # Features
+//!
+//! - 📄 **Multi-format rendering**: Plain, Text, Markdown, JSON, JSONL
+//! - 🧱 **Typed output blocks**: Composable primitives for CLI content
+//! - 💬 **Interactive prompts** (feature: `prompt`): Text, confirm, select, multiselect
+//! - 🎨 **Styled logging** (feature: `logger`): Verbosity-aware stderr output
+//! - 🔤 **ASCII art / figlet** (feature: `figlet`): Banner rendering
+//! - ⚙️ **Feature-gated integrations**: Keep dependencies minimal
+//!
+//! # Quick Start
+//!
+//! ```ignore
+//! use scriba::{Format, Output, Ui};
+//!
+//! fn main() -> scriba::Result<()> {
+//!     let ui = Ui::new().with_format(Format::Markdown);
+//!     let output = Output::new()
+//!         .heading(1, "Hello")
+//!         .paragraph("Clean CLI rendering");
+//!     ui.print(&output)?;
+//!     Ok(())
+//! }
+//! ```
+
 pub mod config;
 pub mod error;
 pub mod output;
