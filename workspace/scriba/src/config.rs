@@ -42,6 +42,7 @@ impl Format {
     /// Parse format from string (case-insensitive).
     ///
     /// Defaults to `Format::Text` if unrecognized.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "plain" => Self::Plain,
@@ -98,6 +99,7 @@ impl Level {
     /// Parse level from string (case-insensitive).
     ///
     /// Defaults to `Level::Normal` if unrecognized.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(format: &str) -> Self {
         match format.to_lowercase().as_str() {
             "silent" => Self::Silent,
@@ -192,6 +194,7 @@ impl ColorMode {
     /// Parse color mode from string (case-insensitive).
     ///
     /// Defaults to `ColorMode::Auto` if unrecognized.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(color: &str) -> Self {
         match color.to_lowercase().as_str() {
             "auto" => Self::Auto,
@@ -200,7 +203,7 @@ impl ColorMode {
             _ => Self::Auto,
         }
     }
-    
+
     /// Convert mode to string representation.
     pub fn as_str(&self) -> &'static str {
         match self {

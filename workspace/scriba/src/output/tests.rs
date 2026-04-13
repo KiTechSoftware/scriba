@@ -221,9 +221,7 @@ fn output_new_creates_empty() {
 
 #[test]
 fn output_title_and_subtitle_render_together() {
-    let output = Output::new()
-        .title("Main Title")
-        .subtitle("Subtitle Text");
+    let output = Output::new().title("Main Title").subtitle("Subtitle Text");
 
     let rendered = super::render::render_markdown(&output).unwrap();
     assert!(rendered.contains("# Main Title"));
@@ -302,10 +300,7 @@ fn list_unordered() {
 
 #[test]
 fn list_ordered() {
-    let output = Output::new().list(
-        true,
-        vec!["First".into(), "Second".into(), "Third".into()],
-    );
+    let output = Output::new().list(true, vec!["First".into(), "Second".into(), "Third".into()]);
 
     let rendered = super::render::render_markdown(&output).unwrap();
     assert!(rendered.contains("1. First"));
@@ -363,10 +358,7 @@ fn separator_renders() {
 
 #[test]
 fn line_block_renders() {
-    let output = Output::new()
-        .line("Line 1")
-        .line("Line 2")
-        .line("Line 3");
+    let output = Output::new().line("Line 1").line("Line 2").line("Line 3");
 
     let rendered = super::render::render_markdown(&output).unwrap();
     assert!(rendered.contains("Line 1"));
@@ -390,7 +382,7 @@ fn table_empty_rows() {
     assert!(rendered.contains("Column 1"));
     assert!(rendered.contains("Column 2"));
     // Should not crash with empty rows
-    assert!(rendered.len() > 0);
+    assert!(!rendered.is_empty());
 }
 
 #[test]
@@ -444,10 +436,7 @@ fn table_without_index() {
 
 #[test]
 fn table_json_value() {
-    let table = Table::new(
-        vec!["Name".into()],
-        vec![vec!["Alice".into()]],
-    );
+    let table = Table::new(vec!["Name".into()], vec![vec!["Alice".into()]]);
 
     let value = table.to_json_value();
     assert!(value.is_object());
@@ -516,7 +505,7 @@ fn section_creates_heading_and_code() {
     let output = Output::new().section("Setup", "npm install", Some("bash".into()));
 
     assert_eq!(output.blocks.len(), 2);
-    
+
     // First block should be heading
     match &output.blocks[0] {
         super::content::Block::Heading { level, text } => {

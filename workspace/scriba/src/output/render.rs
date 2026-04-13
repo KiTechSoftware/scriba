@@ -163,7 +163,7 @@ fn render_text_block(block: &Block, out: &mut String) -> Result<()> {
                 out.push_str(title);
                 out.push('\n');
                 out.push_str(&"-".repeat(title.chars().count()));
-                out.push_str("\n");
+                out.push('\n');
             }
 
             out.push_str(&table::render_text_table(tbl)?);
