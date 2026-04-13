@@ -62,19 +62,28 @@ fn main() -> scriba::Result<()> {
         ],
     ))?;
 
-    let features = ui.multiselect(&MultiSelectRequest::new(
-        "Select enabled capabilities",
-        vec![
-            MultiSelectOption::new("prompt", "Prompt").description("interactive inquire wrapper"),
-            MultiSelectOption::new("logger", "Logger").description("styled stderr logging"),
-            MultiSelectOption::new("figlet", "Figlet")
-                .description("ascii banner rendering")
-                .selected(true),
-            MultiSelectOption::new("markdown", "Markdown")
-                .description("structured markdown output")
-                .selected(true),
-        ],
-    ))?;
+    let features = ui.multiselect(
+        &MultiSelectRequest::new(
+            "Select enabled capabilities",
+            vec![
+                MultiSelectOption::new("prompt", "Prompt")
+                    .description("interactive inquire wrapper"),
+                MultiSelectOption::new("logger", "Logger")
+                    .description("styled stderr logging"),
+                MultiSelectOption::new("figlet", "Figlet")
+                    .description("ascii banner rendering")
+                    .selected(true),
+                MultiSelectOption::new("markdown", "Markdown")
+                    .description("structured markdown output")
+                    .selected(true),
+                MultiSelectOption::new("table", "Table").description("formatted tables"),
+                MultiSelectOption::new("json", "JSON").description("json serialization"),
+                MultiSelectOption::new("colors", "Colors").description("terminal colors"),
+                MultiSelectOption::new("async", "Async").description("async/await support"),
+            ],
+        )
+        .with_page_size(5),
+    )?;
 
     ui.logger().ok("prompt phase complete");
     ui.logger().kv("project", &project_name);

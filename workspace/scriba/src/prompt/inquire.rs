@@ -142,6 +142,8 @@ impl SelectRequest {
 
 /// Request for multi-choice selection prompt.
 ///
+/// Supports optional pagination via `with_page_size()` for large option lists.
+///
 /// # Example
 ///
 /// ```
@@ -153,7 +155,8 @@ impl SelectRequest {
 ///         MultiSelectOption::new("logging", "Logging").selected(true),
 ///         MultiSelectOption::new("prompts", "Prompts"),
 ///     ],
-/// );
+/// )
+/// .with_page_size(5);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultiSelectRequest {
@@ -161,6 +164,8 @@ pub struct MultiSelectRequest {
     pub message: String,
     /// Available options to choose from.
     pub options: Vec<MultiSelectOption>,
+    /// Optional page size for pagination (default: 7).
+    pub page_size: Option<usize>,
 }
 
 impl MultiSelectRequest {
@@ -169,7 +174,29 @@ impl MultiSelectRequest {
         Self {
             message: message.into(),
             options,
+            page_size: None,
         }
+    }
+
+    /// Set pagination page size for large option lists.
+    ///
+    /// If the number of options exceeds this size, users can scroll through pages.
+    /// When `None` (default), inquire uses its default page size of 7.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use scriba::{MultiSelectRequest, MultiSelectOption};
+    ///
+    /// let request = MultiSelectRequest::new(
+    ///     "Select items",
+    ///     vec![MultiSelectOption::new("item1", "Item 1")],
+    /// )
+    /// .with_page_size(10);
+    /// ```
+    pub fn with_page_size(mut self, size: usize) -> Self {
+        self.page_size = Some(size);
+        self
     }
 }
 
@@ -330,9 +357,15 @@ pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<Str
         .filter_map(|(idx, option)| option.selected.then_some(idx))
         .collect::<Vec<_>>();
 
-    let selected = MultiSelect::new(&request.message, options)
+    let mut multiselect = MultiSelect::new(&request.message, options)
         .with_render_config(theme())
-        .with_default(&defaults)
+        .with_default(&defaults);
+
+    if let Some(page_size) = request.page_size {
+        multiselect = multiselect.with_page_size(page_size);
+    }
+
+    let selected = multiselect
         .prompt()
         .map_err(map_inquire_error)?;
 
