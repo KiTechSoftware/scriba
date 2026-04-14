@@ -26,6 +26,8 @@ use crate::{
 pub struct Ui {
     config: Config,
     envelope: EnvelopeConfig,
+    #[cfg(feature = "prompt")]
+    prompt_theme: crate::prompt::PromptTheme,
 }
 
 impl Ui {
@@ -41,6 +43,8 @@ impl Ui {
         Self {
             config: Config::default(),
             envelope: EnvelopeConfig::default(),
+            #[cfg(feature = "prompt")]
+            prompt_theme: crate::prompt::PromptTheme::default(),
         }
     }
 
@@ -61,7 +65,12 @@ impl Ui {
     /// let ui = Ui::with_config(config);
     /// ```
     pub fn with_config(config: Config) -> Self {
-        Self { config, envelope: EnvelopeConfig::default() }
+        Self {
+            config,
+            envelope: EnvelopeConfig::default(),
+            #[cfg(feature = "prompt")]
+            prompt_theme: crate::prompt::PromptTheme::default(),
+        }
     }
 
     /// Get reference to the current configuration.
@@ -139,6 +148,33 @@ impl Ui {
     pub fn with_envelope_fields(mut self, fields: EnvelopeFields) -> Self {
         self.envelope.fields = fields;
         self
+    }
+
+    /// Set the theme for interactive prompts.
+    ///
+    /// Requires the `prompt` feature. Customize colors and styles for Text, Confirm,
+    /// Select, and MultiSelect prompts.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use scriba::{Ui, prompt::PromptTheme};
+    ///
+    /// let ui = Ui::new()
+    ///     .with_prompt_theme(PromptTheme::dark());
+    /// ```
+    #[cfg(feature = "prompt")]
+    pub fn with_prompt_theme(mut self, theme: crate::prompt::PromptTheme) -> Self {
+        self.prompt_theme = theme;
+        self
+    }
+
+    /// Get reference to the current prompt theme.
+    ///
+    /// Requires the `prompt` feature.
+    #[cfg(feature = "prompt")]
+    pub fn prompt_theme(&self) -> &crate::prompt::PromptTheme {
+        &self.prompt_theme
     }
 
     /// Set the output format (e.g., Markdown, JSON).
