@@ -1,4 +1,4 @@
-use crate::{Format, Output, StatusKind, Table};
+use crate::{Format, Output, StatusKind, Table, TableLayout};
 
 #[test]
 fn plain_render_requires_primary_scalar() {
@@ -96,6 +96,214 @@ fn jsonl_render_joins_records_with_newlines() {
 
     assert!(rendered.contains('\n'));
     assert_eq!(rendered.lines().count(), 2);
+}
+
+#[test]
+fn table_full_layout_renders_with_borders() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![vec!["alpha".into(), "1".into()]],
+    )
+    .with_layout_full();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Full layout should have borders (│, ┌, └, etc)
+    assert!(rendered.contains('│'));
+}
+
+#[test]
+fn table_compact_layout_minimal_spacing() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![vec!["alpha".into(), "1".into()]],
+    )
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Compact layout should have headers and row with minimal spacing
+    assert!(rendered.contains("name  value"));
+    assert!(rendered.contains("alpha  1"));
+}
+
+#[test]
+fn table_compact_layout_empty_shows_headers() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![],
+    )
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    assert_eq!(rendered, "name  value");
+}
+
+#[test]
+fn table_stacked_layout_key_value_format() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![
+            vec!["alpha".into(), "1".into()],
+            vec!["beta".into(), "2".into()],
+        ],
+    )
+    .with_layout_stacked();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Stacked layout should have key: value format
+    assert!(rendered.contains("name: alpha"));
+    assert!(rendered.contains("value: 1"));
+    assert!(rendered.contains("---"));
+    assert!(rendered.contains("name: beta"));
+    assert!(rendered.contains("value: 2"));
+}
+
+#[test]
+fn table_stacked_layout_empty_returns_empty_string() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![],
+    )
+    .with_layout_stacked();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    assert_eq!(rendered, "");
+}
+
+#[test]
+fn table_with_index_and_compact_layout() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![
+            vec!["alpha".into(), "1".into()],
+            vec!["beta".into(), "2".into()],
+        ],
+    )
+    .with_index()
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Should have index column and compact spacing
+    assert!(rendered.contains("#  name  value"));
+    assert!(rendered.contains("1  alpha  1"));
+}
+
+#[test]
+fn table_layout_predicates() {
+    assert!(TableLayout::Full.is_full());
+    assert!(!TableLayout::Full.is_compact());
+    assert!(!TableLayout::Full.is_stacked());
+
+    assert!(TableLayout::Compact.is_compact());
+    assert!(!TableLayout::Compact.is_full());
+    assert!(!TableLayout::Compact.is_stacked());
+
+    assert!(TableLayout::Stacked.is_stacked());
+    assert!(!TableLayout::Stacked.is_full());
+    assert!(!TableLayout::Stacked.is_compact());
+}
+
+#[test]
+fn table_from_slices() {
+    let table = Table::from_slices(
+        &["name", "value"],
+        &[vec!["alpha".into(), "1".into()]],
+    );
+
+    assert_eq!(table.headers, vec!["name", "value"]);
+    assert_eq!(table.rows[0], vec!["alpha", "1"]);
+    assert_eq!(table.layout, TableLayout::Full);
+    assert!(!table.show_index);
+}
+
+#[test]
+fn styled_text_dim_ansi() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Hint", crate::TextStyle::Dim));
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    assert!(rendered.contains("\x1b[2m"));
+    assert!(rendered.contains("Hint"));
+}
+
+#[test]
+fn styled_text_in_json_serializes_as_block() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Bold text", crate::TextStyle::Bold));
+
+    let rendered = super::render::render_output(crate::Format::Json, &output).unwrap();
+    let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+
+    let blocks = value["blocks"].as_array().unwrap();
+    assert_eq!(blocks.len(), 1);
+    assert_eq!(blocks[0]["type"], "styled_text");
+    assert_eq!(blocks[0]["text"], "Bold text");
+}
+
+#[test]
+fn table_layout_builders() {
+    let table_full = Table::new(vec![], vec![]).with_layout_full();
+    let table_compact = Table::new(vec![], vec![]).with_layout_compact();
+    let table_stacked = Table::new(vec![], vec![]).with_layout_stacked();
+
+    assert_eq!(table_full.layout, TableLayout::Full);
+    assert_eq!(table_compact.layout, TableLayout::Compact);
+    assert_eq!(table_stacked.layout, TableLayout::Stacked);
+}
+
+#[test]
+fn styled_text_renders_ansi_in_text_format() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Important", crate::TextStyle::Bold));
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    // Should contain ANSI bold codes
+    assert!(rendered.contains("\x1b[1m"));
+    assert!(rendered.contains("Important"));
+    assert!(rendered.contains("\x1b[0m"));
+}
+
+#[test]
+fn styled_text_renders_markdown_syntax() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Notice", crate::TextStyle::Italic));
+
+    let rendered = super::render::render_markdown(&output).unwrap();
+
+    assert!(rendered.contains("*Notice*"));
+}
+
+#[test]
+fn styled_text_bold_italic_renders_correctly() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Critical", crate::TextStyle::BoldItalic));
+
+    let text = super::render::render_text(&output).unwrap();
+    let md = super::render::render_markdown(&output).unwrap();
+
+    assert!(text.contains("\x1b[1;3m"));
+    assert!(md.contains("***Critical***"));
+}
+
+#[test]
+fn styled_text_strikethrough_and_underline() {
+    let out_strike = Output::new()
+        .styled_paragraph(crate::Styled::new("Removed", crate::TextStyle::Strikethrough));
+    let out_under = Output::new()
+        .styled_paragraph(crate::Styled::new("Linked", crate::TextStyle::Underline));
+
+    let md_strike = super::render::render_markdown(&out_strike).unwrap();
+    let md_under = super::render::render_markdown(&out_under).unwrap();
+
+    assert!(md_strike.contains("~~Removed~~"));
+    assert!(md_under.contains("<u>Linked</u>"));
 }
 
 #[test]

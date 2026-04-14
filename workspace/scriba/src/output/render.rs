@@ -190,6 +190,10 @@ fn render_text_block(block: &Block, out: &mut String) -> Result<()> {
             writeln!(out, "[{}] {}", status_label(*kind), text).ok();
             out.push('\n');
         }
+        Block::StyledText { text, style } => {
+            out.push_str(&style.apply_ansi(text));
+            out.push_str("\n\n");
+        }
     }
 
     Ok(())
@@ -262,6 +266,10 @@ fn render_markdown_block(block: &Block, out: &mut String) -> Result<()> {
         Block::Status { kind, text } => {
             writeln!(out, "- **{}**: {}", status_label(*kind), text).ok();
             out.push('\n');
+        }
+        Block::StyledText { text, style } => {
+            out.push_str(&style.apply_markdown(text));
+            out.push_str("\n\n");
         }
     }
 

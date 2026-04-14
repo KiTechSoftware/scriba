@@ -5,9 +5,11 @@
 
 pub mod content;
 pub mod render;
+pub mod style;
 pub mod table;
 
-pub use content::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table};
+pub use content::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table, TableLayout};
+pub use style::{Styled, TextStyle};
 
 #[cfg(test)]
 mod tests;

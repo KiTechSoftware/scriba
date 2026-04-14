@@ -7,8 +7,10 @@
 //! - `Ui::multiselect()` — Choose multiple options
 
 mod inquire;
+pub mod theme;
 
 pub use inquire::{
     confirm, multiselect, select, text, MultiSelectOption, MultiSelectRequest, SelectOption,
     SelectRequest,
 };
+pub use theme::PromptTheme;

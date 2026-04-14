@@ -45,7 +45,7 @@ pub mod figlet;
 pub use config::{ColorMode, Config, Format, Level};
 pub use envelope::{EnvelopeConfig, EnvelopeFields, EnvelopeLayout, EnvelopeMode, Meta};
 pub use error::{Result, ScribaError as Error};
-pub use output::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table};
+pub use output::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table, TableLayout, TextStyle, Styled};
 pub use ui::Ui;
 
 #[cfg(feature = "logger")]
