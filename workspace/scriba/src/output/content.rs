@@ -216,22 +216,24 @@ impl Output {
         self
     }
 
-    /// Add a styled paragraph (with bold, italic, underline, etc.).
+    /// Add a styled text block (with bold, italic, underline, etc.).
     ///
-    /// Uses `Styled` to apply formatting to paragraph text.
+    /// Renders with ANSI codes in Text format and Markdown syntax in Markdown format.
     pub fn styled_paragraph(mut self, styled: crate::output::style::Styled) -> Self {
-        self.blocks.push(Block::Paragraph {
-            text: styled.text.clone(),
+        self.blocks.push(Block::StyledText {
+            text: styled.text,
+            style: styled.style,
         });
-        // Note: Styling is preserved in the Styled type if needed for richer rendering
         self
     }
 
     /// Add a styled heading (with bold, italic, underline, etc.).
+    ///
+    /// The heading level is rendered normally; style is applied to the heading text.
     pub fn styled_heading(mut self, level: u8, styled: crate::output::style::Styled) -> Self {
         self.blocks.push(Block::Heading {
             level,
-            text: styled.text.clone(),
+            text: styled.text,
         });
         self
     }
@@ -287,6 +289,11 @@ pub enum Block {
     DefinitionList { entries: Vec<DefinitionEntry> },
     /// Status indicator (ok, warning, error).
     Status { kind: StatusKind, text: String },
+    /// Styled text block.
+    StyledText {
+        text: String,
+        style: crate::output::style::TextStyle,
+    },
 }
 
 /// Layout style for rendering tables.

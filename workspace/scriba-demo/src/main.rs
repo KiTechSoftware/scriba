@@ -1,6 +1,9 @@
 use scriba::{
     Format, MultiSelectOption, MultiSelectRequest, Output, SelectOption, SelectRequest, StatusKind,
-    Table, Ui, envelope::{EnvelopeConfig, EnvelopeLayout, EnvelopeMode, Meta}, figlet,
+    Styled, Table, TableLayout, TextStyle, Ui,
+    envelope::{EnvelopeConfig, EnvelopeLayout, EnvelopeMode, Meta},
+    figlet,
+    prompt::PromptTheme,
 };
 
 fn main() -> scriba::Result<()> {
@@ -11,6 +14,24 @@ fn main() -> scriba::Result<()> {
 
     let banner = figlet::render("scriba")?;
     println!("{banner}");
+
+    // Select prompt theme
+    let theme_id = ui.select(&SelectRequest::new(
+        "Select prompt theme",
+        vec![
+            SelectOption::new("default", "Default").description("standard terminal colors"),
+            SelectOption::new("dark", "Dark").description("for dark terminal backgrounds"),
+            SelectOption::new("light", "Light").description("for light terminal backgrounds"),
+            SelectOption::new("mono", "Monochrome").description("no colors (accessibility)"),
+        ],
+    ))?;
+
+    let selected_theme = match theme_id.as_str() {
+        "dark" => PromptTheme::dark(),
+        "light" => PromptTheme::light(),
+        "mono" => PromptTheme::monochrome(),
+        _ => PromptTheme::default(),
+    };
 
     // Select output format
     let format_id = ui.select(&SelectRequest::new(
@@ -34,8 +55,11 @@ fn main() -> scriba::Result<()> {
         _ => Format::Text,
     };
 
-    // Create UI with selected format
-    let ui = Ui::new().with_format(selected_format).interactive(true);
+    // Create UI with selected format and theme
+    let ui = Ui::new()
+        .with_format(selected_format)
+        .with_prompt_theme(selected_theme)
+        .interactive(true);
 
     let project_name = ui.text(
         "Project name?",
@@ -85,6 +109,22 @@ fn main() -> scriba::Result<()> {
     ui.logger().kv("environment", &environment);
     ui.logger().kv("selected_features", &features.join(", "));
 
+    // Table layout
+    let layout_id = ui.select(&SelectRequest::new(
+        "Select table layout",
+        vec![
+            SelectOption::new("full", "Full").description("bordered with padding (default)"),
+            SelectOption::new("compact", "Compact").description("minimal spacing, no borders"),
+            SelectOption::new("stacked", "Stacked").description("key-value per row, narrow-terminal friendly"),
+        ],
+    ))?;
+
+    let selected_layout = match layout_id.as_str() {
+        "compact" => TableLayout::Compact,
+        "stacked" => TableLayout::Stacked,
+        _ => TableLayout::Full,
+    };
+
     // Envelope mode
     let envelope_id = ui.select(&SelectRequest::new(
         "Select envelope mode",
@@ -115,13 +155,20 @@ fn main() -> scriba::Result<()> {
         false
     };
 
-    // Rebuild UI with format + envelope
+    // Rebuild UI with format + envelope + theme
     let ui = Ui::new()
         .with_format(selected_format)
         .with_envelope(envelope_cfg)
+        .with_prompt_theme(match theme_id.as_str() {
+            "dark" => PromptTheme::dark(),
+            "light" => PromptTheme::light(),
+            "mono" => PromptTheme::monochrome(),
+            _ => PromptTheme::default(),
+        })
         .interactive(true);
 
     ui.logger().kv("envelope", envelope_id.as_str());
+    ui.logger().kv("layout", layout_id.as_str());
     if envelope_active {
         ui.logger().kv("dry_run", &dry_run.to_string());
     }
@@ -141,7 +188,8 @@ fn main() -> scriba::Result<()> {
     let feature_table = Table::new(
         vec!["#".into(), "feature".into(), "status".into()],
         feature_rows,
-    );
+    )
+    .with_layout(selected_layout);
 
     let output = Output::new()
         .title("scriba demo")
@@ -152,9 +200,13 @@ fn main() -> scriba::Result<()> {
         .data("format", &format_id)
         .data("feature_count", features.len())
         .heading(1, "Summary")
-        .paragraph(format!(
-            "Project **{}** will run against **{}**.",
-            project_name, environment
+        .styled_paragraph(Styled::new(
+            format!("Project {} will run against {}.", project_name, environment),
+            TextStyle::Bold,
+        ))
+        .styled_paragraph(Styled::new(
+            format!("Theme: {} · Layout: {} · Format: {}", theme_id, layout_id, format_id),
+            TextStyle::Dim,
         ))
         .heading(2, "Enabled features")
         .table(Some("Capabilities".into()), feature_table)

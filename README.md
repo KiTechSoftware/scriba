@@ -662,22 +662,22 @@ Built-in fonts include:
 
 ## Recommended Primitive by Use Case
 
-| Need                  | Use                   |
-| --------------------- | --------------------- |
-| Single shell value    | `plain()`             |
-| Human-readable report | headings + paragraphs |
-| Metadata              | `key_value()`         |
-| Glossary / labels     | `definition()`        |
-| State / result        | `status()`            |
-| Structured object     | `data()` / `json()`   |
-| Event stream          | `jsonl_record()`      |
-| Tabular data          | `table()`             |
-| Numbered rows         | `with_index()`        |
-| Table presentation    | `TableLayout`         |
+| Need                  | Use                    |
+| --------------------- | ---------------------- |
+| Single shell value    | `plain()`              |
+| Human-readable report | headings + paragraphs  |
+| Metadata              | `key_value()`          |
+| Glossary / labels     | `definition()`         |
+| State / result        | `status()`             |
+| Structured object     | `data()` / `json()`    |
+| Event stream          | `jsonl_record()`       |
+| Tabular data          | `table()`              |
+| Numbered rows         | `with_index()`         |
+| Table presentation    | `TableLayout`          |
 | Text formatting       | `TextStyle` + `Styled` |
-| Prompt appearance     | `PromptTheme`         |
-| JSON envelope         | `EnvelopeConfig`      |
-| Execution metadata    | `Meta`                |
+| Prompt appearance     | `PromptTheme`          |
+| JSON envelope         | `EnvelopeConfig`       |
+| Execution metadata    | `Meta`                 |
 
 ## Roadmap
 

@@ -215,6 +215,55 @@ fn table_layout_builders() {
 }
 
 #[test]
+fn styled_text_renders_ansi_in_text_format() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Important", crate::TextStyle::Bold));
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    // Should contain ANSI bold codes
+    assert!(rendered.contains("\x1b[1m"));
+    assert!(rendered.contains("Important"));
+    assert!(rendered.contains("\x1b[0m"));
+}
+
+#[test]
+fn styled_text_renders_markdown_syntax() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Notice", crate::TextStyle::Italic));
+
+    let rendered = super::render::render_markdown(&output).unwrap();
+
+    assert!(rendered.contains("*Notice*"));
+}
+
+#[test]
+fn styled_text_bold_italic_renders_correctly() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Critical", crate::TextStyle::BoldItalic));
+
+    let text = super::render::render_text(&output).unwrap();
+    let md = super::render::render_markdown(&output).unwrap();
+
+    assert!(text.contains("\x1b[1;3m"));
+    assert!(md.contains("***Critical***"));
+}
+
+#[test]
+fn styled_text_strikethrough_and_underline() {
+    let out_strike = Output::new()
+        .styled_paragraph(crate::Styled::new("Removed", crate::TextStyle::Strikethrough));
+    let out_under = Output::new()
+        .styled_paragraph(crate::Styled::new("Linked", crate::TextStyle::Underline));
+
+    let md_strike = super::render::render_markdown(&out_strike).unwrap();
+    let md_under = super::render::render_markdown(&out_under).unwrap();
+
+    assert!(md_strike.contains("~~Removed~~"));
+    assert!(md_under.contains("<u>Linked</u>"));
+}
+
+#[test]
 fn jsonl_render_falls_back_to_blocks() {
     let output = Output::new().heading(1, "Hello").paragraph("World");
 

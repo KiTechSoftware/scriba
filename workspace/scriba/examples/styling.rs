@@ -8,18 +8,16 @@
 //! cargo run --example styling
 //! ```
 
-use scriba::{Format, Output, TextStyle, Styled, Ui};
+use scriba::{Format, Output, Styled, TextStyle, Ui};
 
 fn main() -> scriba::Result<()> {
-    // Text format with ANSI styling
-    println!("=== TEXT FORMAT (with ANSI styling) ===\n");
+    // Text format — ANSI escape codes applied
+    println!("=== TEXT FORMAT (ANSI codes) ===\n");
 
     let ui_text = Ui::new().with_format(Format::Text);
 
     let output_text = Output::new()
         .heading(1, "Text Styling Examples")
-        .paragraph("Watch how different styles are rendered:")
-        .line("")
         .styled_paragraph(Styled::new("This is bold text", TextStyle::Bold))
         .styled_paragraph(Styled::new("This is italic text", TextStyle::Italic))
         .styled_paragraph(Styled::new("This is bold and italic", TextStyle::BoldItalic))
@@ -29,50 +27,37 @@ fn main() -> scriba::Result<()> {
 
     ui_text.print(&output_text)?;
 
-    // Markdown format with Markdown syntax
+    // Markdown format — Markdown syntax applied
     println!("\n=== MARKDOWN FORMAT ===\n");
 
     let ui_md = Ui::new().with_format(Format::Markdown);
 
     let output_md = Output::new()
         .heading(1, "Text Styling in Markdown")
-        .paragraph("These styles use Markdown syntax:")
-        .line("")
         .styled_paragraph(Styled::new("This is bold", TextStyle::Bold))
         .styled_paragraph(Styled::new("This is italic", TextStyle::Italic))
         .styled_paragraph(Styled::new("This is bold italic", TextStyle::BoldItalic))
-        .styled_paragraph(Styled::new("This has strikethrough", TextStyle::Strikethrough));
+        .styled_paragraph(Styled::new("This has strikethrough", TextStyle::Strikethrough))
+        .styled_paragraph(Styled::new("This is underlined", TextStyle::Underline));
 
     ui_md.print(&output_md)?;
 
-    // JSON format (styles stored for downstream processing)
-    println!("\n=== JSON FORMAT ===\n");
+    // Direct use of Styled API
+    println!("\n=== DIRECT API ===\n");
 
-    let ui_json = Ui::new().with_format(Format::Json);
+    let bold_styled = Styled::new("Warning: check your config", TextStyle::Bold);
+    let italic_styled = Styled::new("Optional: skip if unneeded", TextStyle::Italic);
+    let dim_styled = Styled::new("Hint: use --verbose for more detail", TextStyle::Dim);
 
-    let output_json = Output::new()
-        .data("style_info", "Text styles are preserved in JSON for downstream processing")
-        .data("bold_example", "Important text")
-        .data("italic_example", "Optional detail");
+    println!("ANSI:");
+    println!("  {}", bold_styled.render_ansi());
+    println!("  {}", italic_styled.render_ansi());
+    println!("  {}", dim_styled.render_ansi());
 
-    ui_json.print(&output_json)?;
-
-    // Programmatic use
-    println!("\n=== DIRECT STYLE RENDERING ===\n");
-
-    let bold_styled = Styled::new("Warning", TextStyle::Bold);
-    let italic_styled = Styled::new("Information", TextStyle::Italic);
-
-    println!(
-        "ANSI rendering: {}",
-        bold_styled.render_ansi()
-    );
-    println!("Markdown rendering: {}", bold_styled.render_markdown());
-    println!(
-        "Italic ANSI: {}",
-        italic_styled.render_ansi()
-    );
-    println!("Italic Markdown: {}", italic_styled.render_markdown());
+    println!("\nMarkdown:");
+    println!("  {}", bold_styled.render_markdown());
+    println!("  {}", italic_styled.render_markdown());
+    println!("  {}", dim_styled.render_markdown());
 
     Ok(())
 }
