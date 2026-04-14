@@ -4,6 +4,48 @@ use ::inquire::{
 };
 
 use crate::{Config, Error, Result};
+use super::theme::PromptTheme;
+
+/// Parse a color string to inquire color.
+///
+/// Supports color names: cyan, white, gray, black, red, etc.
+/// Maps to available inquire::ui::Color variants.
+fn parse_color(color_str: &str) -> Color {
+    match color_str.to_lowercase().as_str() {
+        "black" => Color::Black,
+        "red" | "bright_red" => Color::LightRed,
+        "green" | "bright_green" => Color::LightGreen,
+        "yellow" | "bright_yellow" => Color::LightYellow,
+        "blue" | "bright_blue" => Color::LightBlue,
+        "magenta" | "bright_magenta" => Color::LightMagenta,
+        "cyan" | "bright_cyan" => Color::LightCyan,
+        "white" | "bright_white" => Color::White,
+        "gray" | "grey" | "bright_black" => Color::DarkGrey,
+        "light_gray" | "light_grey" => Color::White,
+        _ => Color::White, // default
+    }
+}
+
+/// Build a RenderConfig from a PromptTheme.
+///
+/// Maps theme colors to inquire color codes and applies them to the render configuration.
+fn theme_from_prompt_theme(theme: &PromptTheme) -> RenderConfig<'_> {
+    RenderConfig::default_colored()
+        .with_prompt_prefix(Styled::new("◇").with_fg(parse_color(&theme.question_color)))
+        .with_answered_prompt_prefix(Styled::new("✔").with_fg(parse_color(&theme.success_color)))
+        .with_canceled_prompt_indicator(Styled::new("✖").with_fg(parse_color(&theme.hint_color)))
+        .with_highlighted_option_prefix(Styled::new("›").with_fg(parse_color(&theme.selected_color)))
+        .with_scroll_up_prefix(Styled::new("↑").with_fg(parse_color(&theme.hint_color)))
+        .with_scroll_down_prefix(Styled::new("↓").with_fg(parse_color(&theme.hint_color)))
+        .with_selected_checkbox(Styled::new("●").with_fg(parse_color(&theme.selected_color)))
+        .with_unselected_checkbox(Styled::new("○").with_fg(parse_color(&theme.unselected_color)))
+        .with_help_message(StyleSheet::new().with_fg(parse_color(&theme.hint_color)))
+        .with_answer(StyleSheet::new().with_fg(parse_color(&theme.success_color)))
+        .with_option(StyleSheet::new().with_fg(parse_color(&theme.input_color)))
+        .with_selected_option(Some(StyleSheet::new().with_fg(parse_color(&theme.selected_color))))
+        .with_text_input(StyleSheet::new().with_fg(parse_color(&theme.input_color)))
+        .with_default_value(StyleSheet::new().with_fg(parse_color(&theme.hint_color)))
+}
 
 /// A selectable option with id and label.
 ///
@@ -225,25 +267,7 @@ impl MultiSelectRequest {
     }
 }
 
-fn theme<'a>() -> RenderConfig<'a> {
-    RenderConfig::default_colored()
-        .with_prompt_prefix(Styled::new("◇").with_fg(Color::LightCyan))
-        .with_answered_prompt_prefix(Styled::new("✔").with_fg(Color::LightGreen))
-        .with_canceled_prompt_indicator(Styled::new("✖").with_fg(Color::DarkGrey))
-        .with_highlighted_option_prefix(Styled::new("›").with_fg(Color::LightCyan))
-        .with_scroll_up_prefix(Styled::new("↑").with_fg(Color::DarkGrey))
-        .with_scroll_down_prefix(Styled::new("↓").with_fg(Color::DarkGrey))
-        .with_selected_checkbox(Styled::new("●").with_fg(Color::LightGreen))
-        .with_unselected_checkbox(Styled::new("○").with_fg(Color::DarkGrey))
-        .with_help_message(StyleSheet::new().with_fg(Color::DarkGrey))
-        .with_answer(StyleSheet::new().with_fg(Color::LightGreen))
-        .with_option(StyleSheet::new().with_fg(Color::White))
-        .with_selected_option(Some(StyleSheet::new().with_fg(Color::LightCyan)))
-        .with_text_input(StyleSheet::new().with_fg(Color::White))
-        .with_default_value(StyleSheet::new().with_fg(Color::DarkGrey))
-}
-
-/// Prompt for text input.
+/// Prompt for text input with theming support.
 ///
 /// Returns `Error::InteractiveRequired` if not in interactive mode.
 ///
@@ -255,6 +279,7 @@ fn theme<'a>() -> RenderConfig<'a> {
 ///     "Your name?",
 ///     Some("Anonymous"),
 ///     None,
+///     &theme,
 /// )?;
 /// ```
 pub fn text(
@@ -262,12 +287,13 @@ pub fn text(
     message: &str,
     default: Option<&str>,
     help: Option<&str>,
+    theme: &PromptTheme,
 ) -> Result<String> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
     }
 
-    let mut prompt = Text::new(message).with_render_config(theme());
+    let mut prompt = Text::new(message).with_render_config(theme_from_prompt_theme(theme));
 
     if let Some(default) = default {
         prompt = prompt.with_default(default);
@@ -280,7 +306,7 @@ pub fn text(
     prompt.prompt().map_err(map_inquire_error)
 }
 
-/// Prompt for yes/no confirmation.
+/// Prompt for yes/no confirmation with theming support.
 ///
 /// Auto-returns `Ok(true)` if `config.auto_yes` is enabled.
 /// Returns the default value if not in interactive mode.
@@ -288,11 +314,11 @@ pub fn text(
 /// # Example
 ///
 /// ```ignore
-/// if scriba::prompt::confirm(&config, "Continue?", false)? {
+/// if scriba::prompt::confirm(&config, "Continue?", false, &theme)? {
 ///     println!("Confirmed!");
 /// }
 /// ```
-pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
+pub fn confirm(cfg: &Config, message: &str, default: bool, theme: &PromptTheme) -> Result<bool> {
     if cfg.auto_yes {
         return Ok(true);
     }
@@ -302,13 +328,13 @@ pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
     }
 
     Confirm::new(message)
-        .with_render_config(theme())
+        .with_render_config(theme_from_prompt_theme(theme))
         .with_default(default)
         .prompt()
         .map_err(map_inquire_error)
 }
 
-/// Prompt user to select one option from a list.
+/// Prompt user to select one option from a list with theming support.
 ///
 /// Returns the `id` of the selected option.
 ///
@@ -321,9 +347,9 @@ pub fn confirm(cfg: &Config, message: &str, default: bool) -> Result<bool> {
 ///     "Pick one",
 ///     vec![SelectOption::new("a", "Option A")],
 /// );
-/// let id = prompt::select(&config, &request)?;
+/// let id = prompt::select(&config, &request, &theme)?;
 /// ```
-pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
+pub fn select(cfg: &Config, request: &SelectRequest, theme: &PromptTheme) -> Result<String> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
     }
@@ -334,7 +360,7 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
         .map(SelectOption::display)
         .collect::<Vec<_>>();
 
-    let mut prompt = Select::new(&request.message, options).with_render_config(theme());
+    let mut prompt = Select::new(&request.message, options).with_render_config(theme_from_prompt_theme(theme));
 
     if let Some(page_size) = request.page_size {
         prompt = prompt.with_page_size(page_size);
@@ -352,7 +378,7 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
     Ok(id)
 }
 
-/// Prompt user to select multiple options from a list.
+/// Prompt user to select multiple options from a list with theming support.
 ///
 /// Returns the `id`s of the selected options.
 ///
@@ -365,9 +391,9 @@ pub fn select(cfg: &Config, request: &SelectRequest) -> Result<String> {
 ///     "Pick multiple",
 ///     vec![MultiSelectOption::new("a", "Option A")],
 /// );
-/// let ids = prompt::multiselect(&config, &request)?;
+/// let ids = prompt::multiselect(&config, &request, &theme)?;
 /// ```
-pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<String>> {
+pub fn multiselect(cfg: &Config, request: &MultiSelectRequest, theme: &PromptTheme) -> Result<Vec<String>> {
     if !cfg.interactive {
         return Err(Error::InteractiveRequired);
     }
@@ -386,7 +412,7 @@ pub fn multiselect(cfg: &Config, request: &MultiSelectRequest) -> Result<Vec<Str
         .collect::<Vec<_>>();
 
     let mut multiselect = MultiSelect::new(&request.message, options)
-        .with_render_config(theme())
+        .with_render_config(theme_from_prompt_theme(theme))
         .with_default(&defaults);
 
     if let Some(page_size) = request.page_size {

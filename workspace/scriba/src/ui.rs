@@ -256,7 +256,7 @@ impl Ui {
     /// ```
     #[cfg(feature = "prompt")]
     pub fn text(&self, message: &str, default: Option<&str>, help: Option<&str>) -> Result<String> {
-        crate::prompt::text(&self.config, message, default, help)
+        crate::prompt::text(&self.config, message, default, help, &self.prompt_theme)
     }
 
     /// Prompt for yes/no confirmation.
@@ -273,7 +273,7 @@ impl Ui {
     /// ```
     #[cfg(feature = "prompt")]
     pub fn confirm(&self, message: &str, default: bool) -> Result<bool> {
-        crate::prompt::confirm(&self.config, message, default)
+        crate::prompt::confirm(&self.config, message, default, &self.prompt_theme)
     }
 
     /// Prompt user to select one option from a list.
@@ -294,7 +294,7 @@ impl Ui {
     /// ```
     #[cfg(feature = "prompt")]
     pub fn select(&self, request: &crate::prompt::SelectRequest) -> Result<String> {
-        crate::prompt::select(&self.config, request)
+        crate::prompt::select(&self.config, request, &self.prompt_theme)
     }
 
     /// Prompt user to select multiple options from a list.
@@ -315,7 +315,7 @@ impl Ui {
     /// ```
     #[cfg(feature = "prompt")]
     pub fn multiselect(&self, request: &crate::prompt::MultiSelectRequest) -> Result<Vec<String>> {
-        crate::prompt::multiselect(&self.config, request)
+        crate::prompt::multiselect(&self.config, request, &self.prompt_theme)
     }
 
     /// Render `Output` to a formatted string without printing.
@@ -576,7 +576,7 @@ mod tests {
         use crate::prompt::PromptTheme;
         let ui = Ui::new().with_prompt_theme(PromptTheme::dark());
         assert_eq!(ui.prompt_theme().name, "dark");
-        assert_eq!(ui.prompt_theme().question_color, "bright_cyan");
+        assert_eq!(ui.prompt_theme().question_color, "bright_magenta");
     }
 
     #[cfg(feature = "prompt")]

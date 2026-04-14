@@ -50,13 +50,13 @@ impl PromptTheme {
     pub fn default_theme() -> Self {
         Self {
             name: "default".into(),
-            question_color: "cyan".into(),
+            question_color: "bright_cyan".into(),
             input_color: "white".into(),
-            selected_color: "green".into(),
+            selected_color: "bright_green".into(),
             unselected_color: "gray".into(),
             hint_color: "gray".into(),
-            success_color: "green".into(),
-            error_color: "red".into(),
+            success_color: "bright_green".into(),
+            error_color: "bright_red".into(),
         }
     }
 
@@ -64,7 +64,7 @@ impl PromptTheme {
     pub fn dark() -> Self {
         Self {
             name: "dark".into(),
-            question_color: "bright_cyan".into(),
+            question_color: "bright_magenta".into(),
             input_color: "bright_white".into(),
             selected_color: "bright_yellow".into(),
             unselected_color: "bright_black".into(),
@@ -78,13 +78,13 @@ impl PromptTheme {
     pub fn light() -> Self {
         Self {
             name: "light".into(),
-            question_color: "blue".into(),
-            input_color: "black".into(),
-            selected_color: "green".into(),
-            unselected_color: "black".into(),
+            question_color: "bright_blue".into(),
+            input_color: "white".into(),
+            selected_color: "bright_cyan".into(),
+            unselected_color: "gray".into(),
             hint_color: "gray".into(),
-            success_color: "green".into(),
-            error_color: "red".into(),
+            success_color: "bright_blue".into(),
+            error_color: "bright_red".into(),
         }
     }
 
@@ -153,21 +153,21 @@ mod tests {
     fn prompt_theme_default() {
         let theme = PromptTheme::default();
         assert_eq!(theme.name, "default");
-        assert_eq!(theme.question_color, "cyan");
+        assert_eq!(theme.question_color, "bright_cyan");
     }
 
     #[test]
     fn prompt_theme_dark() {
         let theme = PromptTheme::dark();
         assert_eq!(theme.name, "dark");
-        assert_eq!(theme.question_color, "bright_cyan");
+        assert_eq!(theme.question_color, "bright_magenta");
     }
 
     #[test]
     fn prompt_theme_light() {
         let theme = PromptTheme::light();
         assert_eq!(theme.name, "light");
-        assert_eq!(theme.question_color, "blue");
+        assert_eq!(theme.question_color, "bright_blue");
     }
 
     #[test]
@@ -221,7 +221,7 @@ mod tests {
         let a = PromptTheme::default();
         let mut b = a.clone();
         b.question_color = "purple".into();
-        assert_eq!(a.question_color, "cyan");
+        assert_eq!(a.question_color, "bright_cyan");
         assert_eq!(b.question_color, "purple");
     }
 }

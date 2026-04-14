@@ -33,6 +33,11 @@ fn main() -> scriba::Result<()> {
         _ => PromptTheme::default(),
     };
 
+    // Update UI immediately with selected theme
+    let ui = ui
+        .with_prompt_theme(selected_theme.clone())
+        .interactive(true);
+
     // Select output format
     let format_id = ui.select(&SelectRequest::new(
         "Select output format",
@@ -115,7 +120,8 @@ fn main() -> scriba::Result<()> {
         vec![
             SelectOption::new("full", "Full").description("bordered with padding (default)"),
             SelectOption::new("compact", "Compact").description("minimal spacing, no borders"),
-            SelectOption::new("stacked", "Stacked").description("key-value per row, narrow-terminal friendly"),
+            SelectOption::new("stacked", "Stacked")
+                .description("key-value per row, narrow-terminal friendly"),
         ],
     ))?;
 
@@ -205,7 +211,10 @@ fn main() -> scriba::Result<()> {
             TextStyle::Bold,
         ))
         .styled_paragraph(Styled::new(
-            format!("Theme: {} · Layout: {} · Format: {}", theme_id, layout_id, format_id),
+            format!(
+                "Theme: {} · Layout: {} · Format: {}",
+                theme_id, layout_id, format_id
+            ),
             TextStyle::Dim,
         ))
         .heading(2, "Enabled features")
