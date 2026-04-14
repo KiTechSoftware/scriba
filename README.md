@@ -18,10 +18,10 @@
 
 ```toml
 [dependencies]
-scriba = "0.3"
+scriba = "0.4"
 
 # optional features
-scriba = { version = "0.3", features = ["prompt", "logger", "figlet"] }
+scriba = { version = "0.4", features = ["prompt", "logger", "figlet"] }
 ```
 
 ### Feature Flags
@@ -334,6 +334,43 @@ Value: 2
 
 See `cargo run --example table_layouts` for all variants with and without index.
 
+## Text Styling
+
+Apply semantic styles to text content: bold, italic, underline, strikethrough, and dim.
+Styles render format-appropriately (ANSI codes for Text, Markdown syntax, etc.).
+
+```rust
+use scriba::{Output, TextStyle, Styled};
+
+let output = Output::new()
+    .styled_paragraph(Styled::new("Important", TextStyle::Bold))
+    .styled_paragraph(Styled::new("Optional", TextStyle::Italic))
+    .styled_paragraph(Styled::new("Striked", TextStyle::Strikethrough));
+```
+
+Available styles:
+
+- `TextStyle::Bold` — Strong emphasis
+- `TextStyle::Italic` — Emphasis
+- `TextStyle::BoldItalic` — Combined
+- `TextStyle::Underline` — Underlined
+- `TextStyle::Strikethrough` — ~~Crossed out~~
+- `TextStyle::Dim` — Faded/dimmed
+
+Direct rendering:
+
+```rust
+let styled = Styled::new("Warning", TextStyle::Bold);
+
+// ANSI codes for Text format
+println!("{}", styled.render_ansi());
+
+// Markdown syntax
+println!("{}", styled.render_markdown());
+```
+
+See `cargo run --example styling` for comprehensive examples.
+
 ## Prompts (`prompt` feature)
 
 ```rust
@@ -394,6 +431,56 @@ let env = ui.select(&SelectRequest::new("Select environment", options)
 let targets = ui.multiselect(&MultiSelectRequest::new("Choose targets", options)
     .with_page_size(10))?;
 ```
+
+### Theming
+
+Customize prompt colors and styles with `PromptTheme`:
+
+```rust
+use scriba::{Ui, prompt::PromptTheme};
+
+// Built-in themes
+let ui_dark = Ui::new().with_prompt_theme(PromptTheme::dark());
+let ui_light = Ui::new().with_prompt_theme(PromptTheme::light());
+let ui_mono = Ui::new().with_prompt_theme(PromptTheme::monochrome());
+
+// Custom theme
+let custom = PromptTheme::default()
+    .with_question_color("magenta")
+    .with_selected_color("cyan")
+    .with_input_color("green");
+
+let ui = Ui::new().with_prompt_theme(custom);
+```
+
+Available themes:
+
+| Theme | Best For |
+|-------|----------|
+| `PromptTheme::default()` | Standard terminal colors |
+| `PromptTheme::dark()` | Dark terminal backgrounds |
+| `PromptTheme::light()` | Light terminal backgrounds |
+| `PromptTheme::monochrome()` | Accessibility (no colors) |
+
+Theme fields (all customizable):
+
+- `question_color` — Prompt text
+- `input_color` — User input
+- `selected_color` — Highlighted items
+- `unselected_color` — Non-highlighted items
+- `hint_color` — Help text
+- `success_color` — Success messages
+- `error_color` — Error messages
+
+Access the active theme:
+
+```rust
+let ui = Ui::new().with_prompt_theme(PromptTheme::dark());
+let theme = ui.prompt_theme();
+println!("Question color: {}", theme.question_color);
+```
+
+See `cargo run --example prompt_theming --features prompt` for all themes.
 
 ## Envelope
 
@@ -587,6 +674,8 @@ Built-in fonts include:
 | Tabular data          | `table()`             |
 | Numbered rows         | `with_index()`        |
 | Table presentation    | `TableLayout`         |
+| Text formatting       | `TextStyle` + `Styled` |
+| Prompt appearance     | `PromptTheme`         |
 | JSON envelope         | `EnvelopeConfig`      |
 | Execution metadata    | `Meta`                |
 
@@ -595,13 +684,16 @@ Built-in fonts include:
 ### v0.4.0
 
 - [x] table layout variants (`Full`, `Compact`, `Stacked`)
-- [ ] richer styling options
+- [x] richer styling options (Bold, Italic, Underline, Strikethrough, Dim)
+- [x] richer prompt theming capabilities (4 built-in themes + custom)
+
+### v0.5.0
+
+- [ ] output streaming
 
 ### Backlog
 
-- [ ] output streaming
 - [ ] optional derive macros
-- [ ] richer prompt theming capabilities
 
 ## License
 
