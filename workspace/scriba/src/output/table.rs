@@ -1,7 +1,7 @@
 use serde_json::Value;
 use tabled::{builder::Builder, settings::Style};
 
-use crate::{error::Result, Format};
+use crate::{error::Result, Format, TableLayout};
 
 use super::Table;
 
@@ -22,6 +22,14 @@ pub fn render_table_value(format: Format, table: &Table) -> Result<Value> {
 }
 
 pub fn render_text_table(table: &Table) -> Result<String> {
+    match table.layout {
+        TableLayout::Full => render_text_table_full(table),
+        TableLayout::Compact => render_text_table_compact(table),
+        TableLayout::Stacked => render_text_table_stacked(table),
+    }
+}
+
+pub fn render_text_table_full(table: &Table) -> Result<String> {
     let table = table.materialized();
 
     let mut builder = Builder::default();
@@ -35,6 +43,47 @@ pub fn render_text_table(table: &Table) -> Result<String> {
     built.with(Style::rounded());
 
     Ok(built.to_string())
+}
+
+pub fn render_text_table_compact(table: &Table) -> Result<String> {
+    let table = table.materialized();
+
+    if table.rows.is_empty() {
+        // Just headers
+        return Ok(table.headers.join("  "));
+    }
+
+    let mut lines = vec![table.headers.join("  ")];
+
+    for row in &table.rows {
+        lines.push(row.join("  "));
+    }
+
+    Ok(lines.join("\n"))
+}
+
+pub fn render_text_table_stacked(table: &Table) -> Result<String> {
+    let table = table.materialized();
+
+    if table.rows.is_empty() {
+        return Ok(String::new());
+    }
+
+    let mut lines = Vec::new();
+
+    for (row_idx, row) in table.rows.iter().enumerate() {
+        if row_idx > 0 {
+            lines.push("---".to_string());
+        }
+
+        for (col_idx, cell) in row.iter().enumerate() {
+            if col_idx < table.headers.len() {
+                lines.push(format!("{}: {}", table.headers[col_idx], cell));
+            }
+        }
+    }
+
+    Ok(lines.join("\n"))
 }
 
 pub fn render_markdown_table(table: &Table) -> Result<String> {

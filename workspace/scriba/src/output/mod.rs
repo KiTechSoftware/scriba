@@ -7,7 +7,7 @@ pub mod content;
 pub mod render;
 pub mod table;
 
-pub use content::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table};
+pub use content::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table, TableLayout};
 
 #[cfg(test)]
 mod tests;

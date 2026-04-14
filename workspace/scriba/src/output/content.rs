@@ -269,6 +269,59 @@ pub enum Block {
     Status { kind: StatusKind, text: String },
 }
 
+/// Layout style for rendering tables.
+///
+/// Controls spacing, borders, and overall presentation of tabular data.
+///
+/// # Examples
+///
+/// ```
+/// use scriba::TableLayout;
+///
+/// let full = TableLayout::Full;     // bordered, full width
+/// let compact = TableLayout::Compact; // minimal spacing, no borders
+/// let stacked = TableLayout::Stacked;  // key-value per row, narrow-terminal friendly
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+pub enum TableLayout {
+    /// Full width with borders and padding (default).
+    ///
+    /// Best for normal terminal widths, clearly delineated rows and columns.
+    #[default]
+    Full,
+    /// Minimal spacing and no borders, compact display.
+    ///
+    /// Good for dense data or when space is limited.
+    Compact,
+    /// Stacked format: one row per line with key-value pairs.
+    ///
+    /// Excellent for narrow terminals, mobile output, or accessibility.
+    /// Each row is displayed as:
+    /// ```text
+    /// Name: value1
+    /// Desc: description1
+    /// ---
+    /// ```
+    Stacked,
+}
+
+impl TableLayout {
+    /// Returns `true` if the layout is `Full`.
+    pub fn is_full(self) -> bool {
+        matches!(self, Self::Full)
+    }
+
+    /// Returns `true` if the layout is `Compact`.
+    pub fn is_compact(self) -> bool {
+        matches!(self, Self::Compact)
+    }
+
+    /// Returns `true` if the layout is `Stacked`.
+    pub fn is_stacked(self) -> bool {
+        matches!(self, Self::Stacked)
+    }
+}
+
 /// A structured data table with headers and rows.
 ///
 /// # Examples
@@ -296,6 +349,13 @@ pub struct Table {
     #[serde(default = "default_index_header")]
     /// Header label for index column (e.g., "#").
     pub index_header: String,
+    #[serde(default = "default_table_layout")]
+    /// Layout style for rendering (Full, Compact, or Stacked).
+    pub layout: TableLayout,
+}
+
+fn default_table_layout() -> TableLayout {
+    TableLayout::Full
 }
 
 fn default_index_header() -> String {
@@ -310,6 +370,7 @@ impl Table {
             rows,
             show_index: false,
             index_header: default_index_header(),
+            layout: default_table_layout(),
         }
     }
 
@@ -326,6 +387,30 @@ impl Table {
         self
     }
 
+    /// Set the table layout.
+    pub fn with_layout(mut self, layout: TableLayout) -> Self {
+        self.layout = layout;
+        self
+    }
+
+    /// Set the table layout to Full (bordered, full width).
+    pub fn with_layout_full(mut self) -> Self {
+        self.layout = TableLayout::Full;
+        self
+    }
+
+    /// Set the table layout to Compact (minimal spacing, no borders).
+    pub fn with_layout_compact(mut self) -> Self {
+        self.layout = TableLayout::Compact;
+        self
+    }
+
+    /// Set the table layout to Stacked (key-value per row).
+    pub fn with_layout_stacked(mut self) -> Self {
+        self.layout = TableLayout::Stacked;
+        self
+    }
+
     /// Create table from borrowed string slices.
     pub fn from_slices(headers: &[&str], rows: &[Vec<String>]) -> Self {
         Self {
@@ -333,6 +418,7 @@ impl Table {
             rows: rows.to_vec(),
             show_index: false,
             index_header: default_index_header(),
+            layout: default_table_layout(),
         }
     }
 
@@ -363,6 +449,7 @@ impl Table {
             rows,
             show_index: false,
             index_header: self.index_header.clone(),
+            layout: self.layout,
         }
     }
 

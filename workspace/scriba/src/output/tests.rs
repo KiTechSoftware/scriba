@@ -1,4 +1,4 @@
-use crate::{Format, Output, StatusKind, Table};
+use crate::{Format, Output, StatusKind, Table, TableLayout};
 
 #[test]
 fn plain_render_requires_primary_scalar() {
@@ -96,6 +96,122 @@ fn jsonl_render_joins_records_with_newlines() {
 
     assert!(rendered.contains('\n'));
     assert_eq!(rendered.lines().count(), 2);
+}
+
+#[test]
+fn table_full_layout_renders_with_borders() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![vec!["alpha".into(), "1".into()]],
+    )
+    .with_layout_full();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Full layout should have borders (│, ┌, └, etc)
+    assert!(rendered.contains('│'));
+}
+
+#[test]
+fn table_compact_layout_minimal_spacing() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![vec!["alpha".into(), "1".into()]],
+    )
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Compact layout should have headers and row with minimal spacing
+    assert!(rendered.contains("name  value"));
+    assert!(rendered.contains("alpha  1"));
+}
+
+#[test]
+fn table_compact_layout_empty_shows_headers() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![],
+    )
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    assert_eq!(rendered, "name  value");
+}
+
+#[test]
+fn table_stacked_layout_key_value_format() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![
+            vec!["alpha".into(), "1".into()],
+            vec!["beta".into(), "2".into()],
+        ],
+    )
+    .with_layout_stacked();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Stacked layout should have key: value format
+    assert!(rendered.contains("name: alpha"));
+    assert!(rendered.contains("value: 1"));
+    assert!(rendered.contains("---"));
+    assert!(rendered.contains("name: beta"));
+    assert!(rendered.contains("value: 2"));
+}
+
+#[test]
+fn table_stacked_layout_empty_returns_empty_string() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![],
+    )
+    .with_layout_stacked();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    assert_eq!(rendered, "");
+}
+
+#[test]
+fn table_with_index_and_compact_layout() {
+    let table = Table::new(
+        vec!["name".into(), "value".into()],
+        vec![
+            vec!["alpha".into(), "1".into()],
+            vec!["beta".into(), "2".into()],
+        ],
+    )
+    .with_index()
+    .with_layout_compact();
+
+    let rendered = super::table::render_text_table(&table).unwrap();
+
+    // Should have index column and compact spacing
+    assert!(rendered.contains("#  name  value"));
+    assert!(rendered.contains("1  alpha  1"));
+}
+
+#[test]
+fn table_default_layout_is_full() {
+    let table = Table::new(
+        vec!["name".into()],
+        vec![vec!["test".into()]],
+    );
+
+    assert_eq!(table.layout, TableLayout::Full);
+}
+
+#[test]
+fn table_layout_builders() {
+    let table_full = Table::new(vec![], vec![]).with_layout_full();
+    let table_compact = Table::new(vec![], vec![]).with_layout_compact();
+    let table_stacked = Table::new(vec![], vec![]).with_layout_stacked();
+
+    assert_eq!(table_full.layout, TableLayout::Full);
+    assert_eq!(table_compact.layout, TableLayout::Compact);
+    assert_eq!(table_stacked.layout, TableLayout::Stacked);
 }
 
 #[test]
