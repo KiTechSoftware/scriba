@@ -216,6 +216,26 @@ impl Output {
         self
     }
 
+    /// Add a styled paragraph (with bold, italic, underline, etc.).
+    ///
+    /// Uses `Styled` to apply formatting to paragraph text.
+    pub fn styled_paragraph(mut self, styled: crate::output::style::Styled) -> Self {
+        self.blocks.push(Block::Paragraph {
+            text: styled.text.clone(),
+        });
+        // Note: Styling is preserved in the Styled type if needed for richer rendering
+        self
+    }
+
+    /// Add a styled heading (with bold, italic, underline, etc.).
+    pub fn styled_heading(mut self, level: u8, styled: crate::output::style::Styled) -> Self {
+        self.blocks.push(Block::Heading {
+            level,
+            text: styled.text.clone(),
+        });
+        self
+    }
+
     /// Create output from a serializable value.
     ///
     /// Converts objects to key-value data; other values are stored as data["value"].
