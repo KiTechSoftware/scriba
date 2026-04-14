@@ -194,13 +194,56 @@ fn table_with_index_and_compact_layout() {
 }
 
 #[test]
-fn table_default_layout_is_full() {
-    let table = Table::new(
-        vec!["name".into()],
-        vec![vec!["test".into()]],
+fn table_layout_predicates() {
+    assert!(TableLayout::Full.is_full());
+    assert!(!TableLayout::Full.is_compact());
+    assert!(!TableLayout::Full.is_stacked());
+
+    assert!(TableLayout::Compact.is_compact());
+    assert!(!TableLayout::Compact.is_full());
+    assert!(!TableLayout::Compact.is_stacked());
+
+    assert!(TableLayout::Stacked.is_stacked());
+    assert!(!TableLayout::Stacked.is_full());
+    assert!(!TableLayout::Stacked.is_compact());
+}
+
+#[test]
+fn table_from_slices() {
+    let table = Table::from_slices(
+        &["name", "value"],
+        &[vec!["alpha".into(), "1".into()]],
     );
 
+    assert_eq!(table.headers, vec!["name", "value"]);
+    assert_eq!(table.rows[0], vec!["alpha", "1"]);
     assert_eq!(table.layout, TableLayout::Full);
+    assert!(!table.show_index);
+}
+
+#[test]
+fn styled_text_dim_ansi() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Hint", crate::TextStyle::Dim));
+
+    let rendered = super::render::render_text(&output).unwrap();
+
+    assert!(rendered.contains("\x1b[2m"));
+    assert!(rendered.contains("Hint"));
+}
+
+#[test]
+fn styled_text_in_json_serializes_as_block() {
+    let output = Output::new()
+        .styled_paragraph(crate::Styled::new("Bold text", crate::TextStyle::Bold));
+
+    let rendered = super::render::render_output(crate::Format::Json, &output).unwrap();
+    let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+
+    let blocks = value["blocks"].as_array().unwrap();
+    assert_eq!(blocks.len(), 1);
+    assert_eq!(blocks[0]["type"], "styled_text");
+    assert_eq!(blocks[0]["text"], "Bold text");
 }
 
 #[test]

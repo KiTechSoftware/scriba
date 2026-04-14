@@ -152,4 +152,44 @@ mod tests {
         let md = styled.render_markdown();
         assert_eq!(md, "**hello**");
     }
+
+    #[test]
+    fn text_style_all_ansi_codes() {
+        assert!(TextStyle::Italic.apply_ansi("t").contains("\x1b[3m"));
+        assert!(TextStyle::BoldItalic.apply_ansi("t").contains("\x1b[1;3m"));
+        assert!(TextStyle::Underline.apply_ansi("t").contains("\x1b[4m"));
+        assert!(TextStyle::Strikethrough.apply_ansi("t").contains("\x1b[9m"));
+        assert!(TextStyle::Dim.apply_ansi("t").contains("\x1b[2m"));
+    }
+
+    #[test]
+    fn styled_render_ansi_and_markdown() {
+        let s = Styled::new("test", TextStyle::Underline);
+        assert!(s.render_ansi().contains("\x1b[4m"));
+        assert_eq!(s.render_markdown(), "<u>test</u>");
+    }
+
+    #[test]
+    fn styled_serde_round_trip() {
+        let original = Styled::new("important", TextStyle::Bold);
+        let json = serde_json::to_string(&original).unwrap();
+        let restored: Styled = serde_json::from_str(&json).unwrap();
+        assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn text_style_serde_round_trip() {
+        for style in [
+            TextStyle::Bold,
+            TextStyle::Italic,
+            TextStyle::BoldItalic,
+            TextStyle::Underline,
+            TextStyle::Strikethrough,
+            TextStyle::Dim,
+        ] {
+            let json = serde_json::to_string(&style).unwrap();
+            let restored: TextStyle = serde_json::from_str(&json).unwrap();
+            assert_eq!(style, restored);
+        }
+    }
 }

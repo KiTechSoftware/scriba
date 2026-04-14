@@ -564,8 +564,34 @@ mod tests {
 
     #[test]
     fn ui_copy() {
+        // Ui is Clone but not Copy (holds EnvelopeConfig/PromptTheme)
         let ui1 = Ui::new().with_format(Format::Json);
-        let ui2 = ui1;
+        let ui2 = ui1.clone();
         assert_eq!(ui2.config().format, Format::Json);
+    }
+
+    #[cfg(feature = "prompt")]
+    #[test]
+    fn ui_with_prompt_theme_dark() {
+        use crate::prompt::PromptTheme;
+        let ui = Ui::new().with_prompt_theme(PromptTheme::dark());
+        assert_eq!(ui.prompt_theme().name, "dark");
+        assert_eq!(ui.prompt_theme().question_color, "bright_cyan");
+    }
+
+    #[cfg(feature = "prompt")]
+    #[test]
+    fn ui_with_prompt_theme_custom() {
+        use crate::prompt::PromptTheme;
+        let theme = PromptTheme::default().with_question_color("magenta");
+        let ui = Ui::new().with_prompt_theme(theme);
+        assert_eq!(ui.prompt_theme().question_color, "magenta");
+    }
+
+    #[cfg(feature = "prompt")]
+    #[test]
+    fn ui_prompt_theme_default_on_new() {
+        let ui = Ui::new();
+        assert_eq!(ui.prompt_theme().name, "default");
     }
 }

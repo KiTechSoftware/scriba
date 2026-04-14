@@ -181,10 +181,47 @@ mod tests {
     }
 
     #[test]
+    fn prompt_theme_all_builders() {
+        let theme = PromptTheme::default()
+            .with_question_color("q")
+            .with_input_color("i")
+            .with_selected_color("s")
+            .with_unselected_color("u")
+            .with_hint_color("h")
+            .with_success_color("ok")
+            .with_error_color("err");
+
+        assert_eq!(theme.question_color, "q");
+        assert_eq!(theme.input_color, "i");
+        assert_eq!(theme.selected_color, "s");
+        assert_eq!(theme.unselected_color, "u");
+        assert_eq!(theme.hint_color, "h");
+        assert_eq!(theme.success_color, "ok");
+        assert_eq!(theme.error_color, "err");
+    }
+
+    #[test]
     fn prompt_theme_monochrome() {
         let theme = PromptTheme::monochrome();
         assert_eq!(theme.name, "monochrome");
         assert_eq!(theme.question_color, "white");
         assert_eq!(theme.selected_color, "white");
+    }
+
+    #[test]
+    fn prompt_theme_serde_round_trip() {
+        let original = PromptTheme::dark();
+        let json = serde_json::to_string(&original).unwrap();
+        let restored: PromptTheme = serde_json::from_str(&json).unwrap();
+        assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn prompt_theme_clone_is_independent() {
+        let a = PromptTheme::default();
+        let mut b = a.clone();
+        b.question_color = "purple".into();
+        assert_eq!(a.question_color, "cyan");
+        assert_eq!(b.question_color, "purple");
     }
 }
