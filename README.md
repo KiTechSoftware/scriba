@@ -297,6 +297,43 @@ let table = Table::new(headers, rows)
     .with_index_header("row");
 ```
 
+#### Table Layouts
+
+Control spacing, borders, and overall presentation with `TableLayout`:
+
+- `TableLayout::Full` (default): Bordered tables with full width and padding
+- `TableLayout::Compact`: Minimal spacing, no borders — dense display
+- `TableLayout::Stacked`: Key-value format per row — ideal for narrow terminals
+
+```rust
+use scriba::{Output, Table, TableLayout};
+
+let table = Table::new(headers, rows)
+    .with_layout(TableLayout::Compact);
+
+let output = Output::new().table(Some("Items".into()), table);
+```
+
+Shorthand builders:
+
+```rust
+let table = Table::new(headers, rows).with_layout_compact();
+let table = Table::new(headers, rows).with_layout_stacked();
+let table = Table::new(headers, rows).with_layout_full();  // default
+```
+
+Stacked layout output:
+
+```text
+Name: alpha
+Value: 1
+---
+Name: beta
+Value: 2
+```
+
+See `cargo run --example table_layouts` for all variants with and without index.
+
 ## Prompts (`prompt` feature)
 
 ```rust
@@ -549,6 +586,7 @@ Built-in fonts include:
 | Event stream          | `jsonl_record()`      |
 | Tabular data          | `table()`             |
 | Numbered rows         | `with_index()`        |
+| Table presentation    | `TableLayout`         |
 | JSON envelope         | `EnvelopeConfig`      |
 | Execution metadata    | `Meta`                |
 
@@ -556,7 +594,7 @@ Built-in fonts include:
 
 ### v0.4.0
 
-- [ ] table layout variants (`Full`, `Compact`, `Stacked`)
+- [x] table layout variants (`Full`, `Compact`, `Stacked`)
 - [ ] richer styling options
 
 ### Backlog
