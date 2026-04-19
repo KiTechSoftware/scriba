@@ -390,6 +390,58 @@ impl Ui {
         stdout.flush()?;
         Ok(())
     }
+
+    /// Display a diff in the UI with proper formatting for the configured format.
+    ///
+    /// Renders a unified diff patch as a code block with `diff` syntax highlighting.
+    /// The diff is displayed using the configured output format (Text, Markdown, JSON, etc.).
+    ///
+    /// # Arguments
+    ///
+    /// - `file_path`: Path to the file being diffed
+    /// - `patch`: The unified diff patch content
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let ui = Ui::new();
+    /// let patch = "--- a/file.rs\n+++ b/file.rs\n+ added line\n context";
+    /// ui.show_diff("src/main.rs", patch)?;
+    /// ```
+    pub fn show_diff(&self, file_path: &str, patch: &str) -> Result<()> {
+        let output = Output::new()
+            .title(&format!("Diff: {}", file_path))
+            .code(Some("diff".to_string()), patch.trim());
+
+        self.print(&output)
+    }
+
+    /// Display a colored diff in the UI, applying color styling when appropriate.
+    ///
+    /// Similar to `show_diff`, but applies color styling for terminal display based on
+    /// the UI's color configuration and format.
+    ///
+    /// # Arguments
+    ///
+    /// - `file_path`: Path to the file being diffed
+    /// - `patch`: The unified diff patch content
+    /// - `use_color`: Whether to apply color styling
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let ui = Ui::new();
+    /// let patch = "--- a/file.rs\n+++ b/file.rs\n+ added line";
+    /// ui.show_diff_colored("src/main.rs", patch, true)?;
+    /// ```
+    pub fn show_diff_colored(&self, file_path: &str, patch: &str, use_color: bool) -> Result<()> {
+        let colored_patch = crate::output::render_colored_diff(patch, use_color);
+        let output = Output::new()
+            .title(&format!("Diff: {}", file_path))
+            .code(Some("diff".to_string()), colored_patch);
+
+        self.print(&output)
+    }
 }
 
 impl Default for Ui {

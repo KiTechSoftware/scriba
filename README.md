@@ -11,6 +11,7 @@
 - 💬 Interactive prompts (feature: `prompt`)
 - 🎨 Styled logging (feature: `logger`)
 - 🔤 ASCII banners / figlet rendering (feature: `figlet`)
+- 📊 Structured diff viewer with format support
 - ⚙️ Feature-gated integrations
 - 🦀 Ergonomic Rust-first APIs
 
@@ -18,19 +19,20 @@
 
 ```toml
 [dependencies]
-scriba = "0.4"
+scriba = "0.5"
 
 # optional features
-scriba = { version = "0.4", features = ["prompt", "logger", "figlet"] }
+scriba = { version = "0.5", features = ["prompt", "logger", "figlet"] }
 ```
 
 ### Feature Flags
 
-| Feature  | Enables                                    |
-| -------- | ------------------------------------------ |
-| `prompt` | Interactive terminal prompts via `inquire` |
-| `logger` | Styled stderr logging                      |
-| `figlet` | ASCII banner rendering                     |
+| Feature  | Enables                                        |
+| -------- | ---------------------------------------------- |
+| `prompt` | Interactive terminal prompts via `inquire`     |
+| `logger` | Styled stderr logging                          |
+| `figlet` | ASCII banner rendering                         |
+| `full`   | All optional features (prompt, logger, figlet) |
 
 ## Quick Start
 
@@ -681,18 +683,9 @@ Built-in fonts include:
 
 ## Roadmap
 
-### v0.4.0
-
-- [x] table layout variants (`Full`, `Compact`, `Stacked`)
-- [x] richer styling options (Bold, Italic, Underline, Strikethrough, Dim)
-- [x] richer prompt theming capabilities (4 built-in themes + custom)
-
-### v0.5.0
-
-- [ ] output streaming
-
 ### Backlog
 
+- [ ] output streaming
 - [ ] optional derive macros
 
 ## License

@@ -16,6 +16,7 @@ default = []
 prompt = ["dep:inquire"]
 logger = ["dep:console"]
 figlet = ["dep:figlet-rs"]
+full = ["prompt", "logger", "figlet"]
 
 [dependencies]
 serde.workspace = true

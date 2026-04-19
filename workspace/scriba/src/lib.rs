@@ -45,7 +45,7 @@ pub mod figlet;
 pub use config::{ColorMode, Config, Format, Level};
 pub use envelope::{EnvelopeConfig, EnvelopeFields, EnvelopeLayout, EnvelopeMode, Meta};
 pub use error::{Result, ScribaError as Error};
-pub use output::{Block, DefinitionEntry, KeyValueEntry, Output, StatusKind, Table, TableLayout, TextStyle, Styled};
+pub use output::{format_diff_for_scriba, parse_diff, render_colored_diff, Block, DefinitionEntry, DiffLine, DiffLineKind, KeyValueEntry, Output, StatusKind, Table, TableLayout, TextStyle, Styled};
 pub use ui::Ui;
 
 #[cfg(feature = "logger")]
